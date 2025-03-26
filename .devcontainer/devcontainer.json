@@ -1,0 +1,27 @@
+{
+    "name": "Comfy3D-devcontainer",
+    "dockerComposeFile": "../docker-compose.yml",
+    "service": "comfy3d",
+    "workspaceFolder": "/workspace",
+    "customizations": {
+      "vscode": {
+        "extensions": [
+          "ms-python.python",
+          "ms-python.vscode-pylance",
+          "ms-toolsai.jupyter",
+          "ms-azuretools.vscode-docker",
+          "ms-python.black-formatter",
+          "ms-python.pylint"
+        ],
+        "settings": {
+          "python.defaultInterpreterPath": "/app/.venv/bin/python",
+          "[python]": {
+            "editor.defaultFormatter": "ms-python.python"
+          },
+          "editor.formatOnSave": true
+        }
+      }
+    },
+    "remoteUser": "root",
+    "postStartCommand": "/app/utils/init.sh"
+  } 

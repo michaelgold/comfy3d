@@ -1,0 +1,8 @@
+[
+    {
+        "repo_id": "tencent/Hunyuan3D-2",
+        "subfolder": "hunyuan3d-dit-v2-0-turbo",
+        "filename": "model.fp16.safetensors",
+        "local_path": "/app/models/diffusion_models/hy3dgen/hunyuan3d-dit-v2-0-turbo-fp16.safetensors"
+    }
+] 
