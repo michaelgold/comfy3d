@@ -22,6 +22,7 @@ services:
       - comfyui-models:/app/models
       - comfyui-manager:/app/user/default/ComfyUI-Manager
       - comfyui-u2net:/root/.u2net
+      - .:/workspace
     command: /app/utils/init.sh
 
 
@@ -30,3 +31,4 @@ volumes:
   comfyui-models:
   comfyui-manager:
   comfyui-u2net:
+

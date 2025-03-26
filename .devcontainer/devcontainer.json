@@ -23,5 +23,6 @@
       }
     },
     "remoteUser": "root",
-    "postStartCommand": "/app/utils/init.sh"
+    "postStartCommand": "cd /app && /app/utils/init.sh",
+    "overrideCommand": true
   } 
