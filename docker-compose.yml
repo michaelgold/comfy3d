@@ -25,7 +25,7 @@ services:
     command: /app/utils/init.sh
 
 volumes:
-  comfyui-custom-nodes:
+  comfyui-nodes:
   comfyui-models:
   comfyui-manager:
   comfyui-u2net:
