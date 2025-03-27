@@ -67,12 +67,9 @@ ENV CUDA_HOME="/usr/local/cuda"
 
 ENV LD_LIBRARY_PATH="/usr/local/cuda/lib64:/usr/local/cuda/targets/x86_64-linux/lib:/usr/lib64:${LD_LIBRARY_PATH}"
 ENV PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True,garbage_collection_threshold:0.6,max_split_size_mb:128"
-ENV TORCH_CUDA_ARCH_LIST="7.0;7.5;8.0;8.6;8.9;9.0"
+ENV TORCH_CUDA_ARCH_LIST="6.1;7.0;7.5;8.0;8.6;8.9;9.0"
 
 RUN git clone https://github.com/comfyanonymous/ComfyUI .
-
-
-RUN git checkout v0.3.27
 
 # Make a virtual environment
 RUN python3.11 -m venv /app/.venv
@@ -81,6 +78,8 @@ RUN python3.11 -m venv /app/.venv
 SHELL ["/bin/bash", "-c"]
 ENV VIRTUAL_ENV=/app/.venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+RUN source /app/.venv/bin/activate
+ENV PIP_NO_CACHE_DIR=1
 
 # Install PyTorch with uv
 RUN uv pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
@@ -90,23 +89,23 @@ RUN python -c "import torch; print('CUDA available:', torch.cuda.is_available())
 
 # Install comfyui dependencies
 RUN uv pip install wheel setuptools ninja pybind11 pytest pytest-runner packaging
-RUN uv pip install -r ./requirements.txt
+
 
 # Install comfyui manager
 WORKDIR /app/custom_nodes/
-RUN git clone https://github.com/ltdrdata/ComfyUI-Manager
+RUN git clone --depth=1 https://github.com/ltdrdata/ComfyUI-Manager
 WORKDIR /app/custom_nodes/ComfyUI-Manager
 RUN uv pip install -r requirements.txt
 
 # Install comfyui essentials
 WORKDIR /app/custom_nodes/
-RUN git clone https://github.com/cubiq/ComfyUI_essentials
+RUN git clone --depth=1 https://github.com/cubiq/ComfyUI_essentials
 WORKDIR /app/custom_nodes/ComfyUI_essentials
 RUN uv pip install -r requirements.txt
 
 # Install comfyui hunyuan3d wrapper
 WORKDIR /app/custom_nodes/
-RUN git clone https://github.com/kijai/ComfyUI-Hunyuan3DWrapper.git
+RUN git clone --depth=1 https://github.com/kijai/ComfyUI-Hunyuan3DWrapper.git
 WORKDIR /app/custom_nodes/ComfyUI-Hunyuan3DWrapper
 RUN uv pip install -r requirements.txt
 ENV PATH="/usr/local/cuda/bin:${PATH}"
@@ -120,7 +119,7 @@ RUN uv pip install . --no-build-isolation
 
 # Install comfy3d
 WORKDIR /app/custom_nodes/
-RUN git clone https://github.com/MrForExample/ComfyUI-3D-Pack
+RUN git clone --depth=1 https://github.com/MrForExample/ComfyUI-3D-Pack
 WORKDIR /app/custom_nodes/ComfyUI-3D-Pack
 RUN uv pip install -r requirements.txt
 
@@ -138,7 +137,8 @@ RUN mkdir -p deps_build && \
     cd nvdiffrast && python setup.py bdist_wheel && pip install dist/*.whl && cd ..  && \
     cd kiuikit && python setup.py bdist_wheel && pip install dist/*.whl && cd .. && \
     cd pytorch3d && python setup.py bdist_wheel && pip install dist/*.whl && cd .. && \
-    cd pytorch_scatter && python setup.py bdist_wheel && pip install dist/*.whl && cd ..
+    cd pytorch_scatter && python setup.py bdist_wheel && pip install dist/*.whl && cd .. && cd .. && \
+    rm -rf deps_build
 
 # Install plotly
 RUN uv pip install plotly
@@ -148,10 +148,17 @@ RUN uv pip install -U xformers --index-url https://download.pytorch.org/whl/cu12
 
 
 # Save a copy of the fully set-up custom nodes (before volume mounts mask them)
-RUN mkdir -p /app/_custom_nodes_template && \
-    cp -r /app/custom_nodes/* /app/_custom_nodes_template/
+# RUN mkdir -p /app/_custom_nodes_template && \
+#     cp -r /app/custom_nodes/* /app/_custom_nodes_template/
 
 WORKDIR /app
+
+RUN git pull 
+ENV VERSION=v0.3.27
+
+RUN git checkout $VERSION -b $VERSION
+
+RUN uv pip install -r ./requirements.txt
 
 COPY ./utils /app/utils
 RUN chmod a+x /app/utils/init.sh

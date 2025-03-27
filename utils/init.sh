@@ -1,15 +1,15 @@
 #!/bin/bash
 set -e
 
-echo "Bootstrapping missing custom nodes from template if not present..."
+# echo "Bootstrapping missing custom nodes from template if not present..."
 
-for dir in /app/_custom_nodes_template/*; do
-  name=$(basename "$dir")
-  if [ ! -d "/app/custom_nodes/$name" ]; then
-    echo "Copying $name..."
-    cp -r "$dir" "/app/custom_nodes/$name"
-  fi
-done
+# for dir in /app/_custom_nodes_template/*; do
+#   name=$(basename "$dir")
+#   if [ ! -d "/app/custom_nodes/$name" ]; then
+#     echo "Copying $name..."
+#     cp -r "$dir" "/app/custom_nodes/$name"
+#   fi
+# done
 
 #activate venv
 source /app/.venv/bin/activate
