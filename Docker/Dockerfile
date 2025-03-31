@@ -147,6 +147,13 @@ RUN uv pip install plotly
 RUN uv pip install -U xformers --index-url https://download.pytorch.org/whl/cu126
 
 
+ENV BUILD_DATE = 2025-03-31-02-50
+
+WORKDIR /app/custom_nodes/
+RUN git clone --depth=1 https://github.com/michaelgold/ComfyUI-Hal.fun-Model-Downloader
+WORKDIR /app/custom_nodes/ComfyUI-Hal.fun-Model-Downloader
+RUN uv pip install -r requirements.txt
+
 # Save a copy of the fully set-up custom nodes (before volume mounts mask them)
 # RUN mkdir -p /app/_custom_nodes_template && \
 #     cp -r /app/custom_nodes/* /app/_custom_nodes_template/
@@ -160,9 +167,12 @@ RUN git checkout $VERSION -b $VERSION
 
 RUN uv pip install -r ./requirements.txt
 
+
 COPY ./utils /app/utils
 RUN chmod a+x /app/utils/init.sh
 
+COPY ./workflows /app/user/default/workflows
+
 EXPOSE 8188
 
-ENTRYPOINT ["/bin/bash"]
+ENTRYPOINT ["/app/utils/init.sh"]
