@@ -57,7 +57,8 @@ jobs:
           BUILDKIT_PROGRESS: plain
 
       - name: Print Docker image digest
-        run: echo "Image digest: ${{ steps.docker_build.outputs.digest }}"
+        run: |
+          echo "Image digest: ${{ steps.docker_build.outputs.digest }}"
 
       - name: Test container boot
         run: |
