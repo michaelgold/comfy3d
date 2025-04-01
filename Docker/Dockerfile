@@ -27,11 +27,9 @@ RUN apt-get update && apt-get install -y \
     chmod +x /usr/local/bin/uv /usr/local/bin/uvx && \
     python3 -m venv $VIRTUAL_ENV && \
     git clone --depth=1 --branch $VERSION https://github.com/comfyanonymous/ComfyUI /tmp/ComfyUI && \
-    cp -a /tmp/ComfyUI/. /app && rm -rf /tmp/ComfyUI 
-    rm -rf uv-extract
-
-# Install everything
-RUN source $VIRTUAL_ENV/bin/activate && \
+    cp -a /tmp/ComfyUI/. /app && rm -rf /tmp/ComfyUI && \
+    rm -rf uv-extract && \
+    source $VIRTUAL_ENV/bin/activate && \
     uv pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/${TORCH_CUDA} && \
     uv pip install --no-cache-dir -U xformers --index-url https://download.pytorch.org/whl/${TORCH_CUDA} && \
     uv pip install --no-cache-dir wheel setuptools ninja pybind11 pytest packaging plotly && \
