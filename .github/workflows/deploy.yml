@@ -1,44 +1,89 @@
----
 name: Build and Deploy Docker Image
+
 on:
   push:
     branches:
       - main
-  workflow_dispatch: null
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
 jobs:
-  build-and-deploy:
+  build-and-test:
     runs-on: ubuntu-latest
     timeout-minutes: 120
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+
       - name: Extract version from Dockerfile
         id: extract-version
         run: |
           VERSION=$(grep -oP '(?<=ENV VERSION=)[^ ]+' Docker/Dockerfile)
           echo "VERSION=$VERSION" >> $GITHUB_ENV
-      - name: Build and push Docker image
+
+      - name: Build Docker image (without push)
         id: docker_build
         uses: docker/build-push-action@v6
         with:
           context: .
           file: Docker/Dockerfile
-          push: true
-          tags: michaelgold/comfy3d:latest,michaelgold/comfy3d:${{ env.VERSION }}
-          sbom: false
-          provenance: false
+          push: false
+          load: true
+          tags: michaelgold/comfy3d:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          sbom: "false"
+          provenance: "false"
         env:
           DOCKER_BUILDKIT: 1
           BUILDKIT_PROGRESS: plain
+
       - name: Print Docker image digest
+        run: echo "Image digest: ${{ steps.docker_build.outputs.digest }}"
+
+      - name: Test container boot
         run: |
-          echo "Image digest: ${{ steps.docker_build.outputs.digest }}"
+          docker run -d -p 8188:8188 --name comfy-test michaelgold/comfy3d:test
+          sleep 300
+          docker logs comfy-test > logs.txt
+          cat logs.txt
+          if grep -q "0.0.0.0" logs.txt; then
+            echo "✅ ComfyUI server started"
+          else
+            echo "❌ ComfyUI server did not start" && exit 1
+          fi
+
+  push:
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Push tested image
+        run: |
+          docker tag michaelgold/comfy3d:test michaelgold/comfy3d:latest
+          docker tag michaelgold/comfy3d:test michaelgold/comfy3d:${{ env.VERSION }}
+          docker push michaelgold/comfy3d:latest
+          docker push michaelgold/comfy3d:${{ env.VERSION }}
