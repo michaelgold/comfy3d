@@ -9,12 +9,13 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 120  # ⏱️ 2-hour timeout
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up QEMU (for cross-platform builds — optional)
+      - name: Set up QEMU (for multi-arch support, optional)
         uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
@@ -33,11 +34,20 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
       - name: Build and push Docker image
+        id: docker_build
         uses: docker/build-push-action@v6
         with:
           context: .
           file: Docker/Dockerfile
-          push: true
+          push: true 
           tags: |
             michaelgold/comfy3d:latest
             michaelgold/comfy3d:${{ env.VERSION }}
+          sbom: false
+          provenance: false
+        env:
+          DOCKER_BUILDKIT: 1
+          BUILDKIT_PROGRESS: plain
+
+      - name: Print Docker image digest
+        run: echo "Image digest: ${{ steps.docker_build.outputs.digest }}"
