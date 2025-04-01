@@ -9,13 +9,13 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 120  # ⏱️ 2-hour timeout
+    timeout-minutes: 120
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up QEMU (for multi-arch support, optional)
+      - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
@@ -39,7 +39,7 @@ jobs:
         with:
           context: .
           file: Docker/Dockerfile
-          push: true 
+          push: true
           tags: |
             michaelgold/comfy3d:latest
             michaelgold/comfy3d:${{ env.VERSION }}
