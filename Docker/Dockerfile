@@ -10,6 +10,19 @@ ENV VERSION=${VERSION}
 ARG TORCH_CUDA=cu126
 ENV TORCH_CUDA=${TORCH_CUDA}
 
+# Cuda environment
+ENV VIRTUAL_ENV="/app/.venv"
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV NVIDIA_VISIBLE_DEVICES=all
+ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility,graphics
+ENV PYOPENGL_PLATFORM=egl
+ENV FORCE_CUDA="1"
+ENV CUDA_HOME="/usr/local/cuda"
+ENV LD_LIBRARY_PATH="/usr/local/cuda/lib64:/usr/local/cuda/targets/x86_64-linux/lib:/usr/lib64:${LD_LIBRARY_PATH}"
+ENV PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True,garbage_collection_threshold:0.6,max_split_size_mb:128"
+ENV TORCH_CUDA_ARCH_LIST="6.1;7.0;7.5;8.0;8.6;8.9;9.0"
+
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
