@@ -68,12 +68,7 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 WORKDIR /app
 
-COPY --from=builder /app/.venv /app/.venv
-COPY --from=builder /app/custom_nodes /app/custom_nodes
-COPY --from=builder /app/utils /app/utils
-COPY --from=builder /app/ComfyUI.py /app/ComfyUI.py
-COPY --from=builder /app/web /app/web
-COPY --from=builder /app/workflows /app/user/default/workflows
+COPY --from=builder /app
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
@@ -86,6 +81,10 @@ ENV LD_LIBRARY_PATH="/usr/local/cuda/lib64:/usr/local/cuda/targets/x86_64-linux/
 ENV PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True,garbage_collection_threshold:0.6,max_split_size_mb:128"
 ENV TORCH_CUDA_ARCH_LIST="6.1;7.0;7.5;8.0;8.6;8.9;9.0"
 
+COPY ./utils /app/utils
 RUN chmod a+x /app/utils/init.sh
+
+COPY ./workflows /app/user/default/workflows
+
 EXPOSE 8188
 ENTRYPOINT ["/app/utils/init.sh"]
