@@ -10,7 +10,7 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 WORKDIR /app
 SHELL ["/bin/bash", "-c"]
 
-# Install everything in one step to save space
+# Install all deps and Python
 RUN apt-get update && apt-get install -y \
     build-essential curl ffmpeg git software-properties-common \
     libegl1-mesa-dev libgl1-mesa-dev libglvnd-dev libsm6 libxext6 libxrender1 \
@@ -18,15 +18,20 @@ RUN apt-get update && apt-get install -y \
     add-apt-repository -y ppa:deadsnakes/ppa && apt-get update && \
     apt-get install -y python3.11 python3.11-venv python3.11-dev python3.11-distutils && \
     update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1 && \
+    rm -rf /var/lib/apt/lists/* get-pip.py uv-x86_64-unknown-linux-gnu.tar.gz && \
     wget https://bootstrap.pypa.io/get-pip.py && python3 get-pip.py && \
     wget https://github.com/astral-sh/uv/releases/latest/download/uv-x86_64-unknown-linux-gnu.tar.gz && \
-    tar -xzf uv-x86_64-unknown-linux-gnu.tar.gz -C /usr/local/bin --strip-components=1 && \
-    chmod +x /usr/local/bin/uv && \
+    mkdir -p uv-extract && tar -xzf uv-x86_64-unknown-linux-gnu.tar.gz -C uv-extract && \
+    cp uv-extract/uv-x86_64-unknown-linux-gnu/uv /usr/local/bin/uv && \
+    cp uv-extract/uv-x86_64-unknown-linux-gnu/uvx /usr/local/bin/uvx && \
+    chmod +x /usr/local/bin/uv /usr/local/bin/uvx && \
     python3 -m venv $VIRTUAL_ENV && \
-    rm -rf /var/lib/apt/lists/* get-pip.py uv-x86_64-unknown-linux-gnu.tar.gz && \
     git clone --depth=1 --branch $VERSION https://github.com/comfyanonymous/ComfyUI /tmp/ComfyUI && \
-    cp -a /tmp/ComfyUI/. /app && rm -rf /tmp/ComfyUI && \
-    source $VIRTUAL_ENV/bin/activate && \
+    cp -a /tmp/ComfyUI/. /app && rm -rf /tmp/ComfyUI 
+    rm -rf uv-extract
+
+# Install everything
+RUN source $VIRTUAL_ENV/bin/activate && \
     uv pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/${TORCH_CUDA} && \
     uv pip install --no-cache-dir -U xformers --index-url https://download.pytorch.org/whl/${TORCH_CUDA} && \
     uv pip install --no-cache-dir wheel setuptools ninja pybind11 pytest packaging plotly && \
@@ -63,12 +68,14 @@ ENV VIRTUAL_ENV=/app/.venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 WORKDIR /app
-RUN git clone --depth=1 --branch $VERSION https://github.com/comfyanonymous/ComfyUI /tmp/ComfyUI && \
-    cp -a /tmp/ComfyUI/. /app && rm -rf /tmp/ComfyUI
 
 COPY --from=builder /app/.venv /app/.venv
 COPY --from=builder /app/custom_nodes /app/custom_nodes
 COPY --from=builder /app/utils /app/utils
+COPY --from=builder /app/ComfyUI.py /app/ComfyUI.py
+COPY --from=builder /app/web /app/web
+COPY --from=builder /app/requirements.txt /app/requirements.txt
+COPY --from=builder /app/workflows /app/user/default/workflows
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
@@ -81,8 +88,6 @@ ENV LD_LIBRARY_PATH="/usr/local/cuda/lib64:/usr/local/cuda/targets/x86_64-linux/
 ENV PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True,garbage_collection_threshold:0.6,max_split_size_mb:128"
 ENV TORCH_CUDA_ARCH_LIST="6.1;7.0;7.5;8.0;8.6;8.9;9.0"
 
-COPY ./utils /app/utils
 RUN chmod a+x /app/utils/init.sh
-COPY ./workflows /app/user/default/workflows
 EXPOSE 8188
 ENTRYPOINT ["/app/utils/init.sh"]
