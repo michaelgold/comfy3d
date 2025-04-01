@@ -8,11 +8,18 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      version:
+        description: "ComfyUI Version"
+        required: false
+        default: "v0.3.27"
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
     timeout-minutes: 120
+    env:
+      VERSION: ${{ inputs.version || 'v0.3.27' }}
 
     steps:
       - name: Checkout repository
@@ -30,12 +37,6 @@ jobs:
           username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Extract version from Dockerfile
-        id: extract-version
-        run: |
-          VERSION=$(grep -oP '(?<=ENV VERSION=)[^ ]+' Docker/Dockerfile)
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-
       - name: Build Docker image (without push)
         id: docker_build
         uses: docker/build-push-action@v6
@@ -44,6 +45,8 @@ jobs:
           file: Docker/Dockerfile
           push: false
           load: true
+          build-args: |
+            VERSION=${{ env.VERSION }}
           tags: michaelgold/comfy3d:test
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -54,8 +57,7 @@ jobs:
           BUILDKIT_PROGRESS: plain
 
       - name: Print Docker image digest
-        run: |
-          echo "Image digest: ${{ steps.docker_build.outputs.digest }}"
+        run: echo "Image digest: ${{ steps.docker_build.outputs.digest }}"
 
       - name: Test container boot
         run: |
@@ -74,6 +76,8 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    env:
+      VERSION: ${{ inputs.version || 'v0.3.27' }}
 
     steps:
       - name: Log in to Docker Hub
