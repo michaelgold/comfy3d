@@ -65,9 +65,6 @@ RUN python3 -m venv $VIRTUAL_ENV
 
 SHELL ["/bin/bash", "-c"]
 
-# Clone and check out ComfyUI at specified version
-RUN git clone --depth=1 --branch $VERSION https://github.com/comfyanonymous/ComfyUI /tmp/ComfyUI && \
-    cp -a /tmp/ComfyUI/. /app && rm -rf /tmp/ComfyUI
 
 # Install core Python dependencies
 RUN source $VIRTUAL_ENV/bin/activate && \
@@ -80,7 +77,6 @@ RUN source $VIRTUAL_ENV/bin/activate && \
     uv pip install wheel setuptools ninja pybind11 pytest packaging && \
     uv pip install plotly && \
     uv pip install -U xformers --index-url https://download.pytorch.org/whl/${TORCH_CUDA} && \
-    uv pip install -r requirements.txt && \
     find /app -type d -name '__pycache__' -exec rm -r {} + || true
 
 # Install custom nodes
@@ -123,6 +119,14 @@ RUN mkdir -p deps_build && cd deps_build && \
 
 COPY ./utils /app/utils
 RUN chmod a+x /app/utils/init.sh
+
+# Clone, check out, and install ComfyUI at specified version
+RUN source $VIRTUAL_ENV/bin/activate && \
+    git clone --depth=1 --branch $VERSION https://github.com/comfyanonymous/ComfyUI /tmp/ComfyUI && \
+    cp -a /tmp/ComfyUI/. /app && rm -rf /tmp/ComfyUI && \
+    uv pip install -r requirements.txt && \
+    find /app -type d -name '__pycache__' -exec rm -r {} + || true
+
 COPY ./workflows /app/user/default/workflows
 
 EXPOSE 8188
