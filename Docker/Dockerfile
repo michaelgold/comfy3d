@@ -7,6 +7,9 @@ ENV TORCH_CUDA=${TORCH_CUDA}
 
 # Set TORCH_CUDA based on BASE_IMAGE
 
+# Prevent interactive prompts during package installation
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=UTC
 
 WORKDIR /app
 
