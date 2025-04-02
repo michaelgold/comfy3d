@@ -42,6 +42,8 @@ jobs:
             -f Docker/Dockerfile .
       - name: Test container
         run: |
+          # Remove existing container if it exists
+          docker rm -f comfy-test || true
           docker run -d -p 8188:8188 --name comfy-test --gpus all michaelgold/comfy3d:${{ env.VERSION }}-${{ matrix.cuda.tag_suffix }}
           sleep 300
           docker logs comfy-test > logs.txt
