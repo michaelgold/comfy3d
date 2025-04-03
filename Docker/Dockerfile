@@ -132,6 +132,15 @@ RUN source $VIRTUAL_ENV/bin/activate && \
     uv pip install -r requirements.txt && \
     find /app -type d -name '__pycache__' -exec rm -r {} + || true
 
+# Update some of our custom nodes
+RUN source $VIRTUAL_ENV/bin/activate && \
+    cd /app/custom_nodes/ComfyUI-Hal.fun-Model-Downloader && \
+    git pull && \
+    uv pip install -r requirements.txt && \
+    cd /app/custom_nodes/ComfyUI-Manager && \
+    git pull && \
+    uv pip install -r requirements.txt && \
+
 COPY ./workflows /app/user/default/workflows
 COPY ./input /app/input
 EXPOSE 8188
