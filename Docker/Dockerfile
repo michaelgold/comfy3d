@@ -131,7 +131,7 @@ RUN source $VIRTUAL_ENV/bin/activate && \
     find /app -type d -name '__pycache__' -exec rm -r {} + || true
 
 COPY ./workflows /app/user/default/workflows
-
+COPY ./input /app/input
 EXPOSE 8188
 
 ENTRYPOINT ["/app/utils/init.sh"]
