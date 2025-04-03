@@ -122,6 +122,8 @@ RUN mkdir -p deps_build && cd deps_build && \
 
 COPY ./utils /app/utils
 RUN chmod a+x /app/utils/init.sh
+# fix for EGL
+ENV EGL_PLATFORM=surfaceless
 
 # Clone, check out, and install ComfyUI at specified version
 RUN source $VIRTUAL_ENV/bin/activate && \
