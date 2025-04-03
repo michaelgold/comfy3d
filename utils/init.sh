@@ -15,8 +15,7 @@ set -e
 source /app/.venv/bin/activate
 
 
-echo "Downloading models if needed..."
-python /app/utils/model_downloader.py /app/utils/model_config.json
+# echo "Downloading models if needed and starting ComfyUI" 
+# python /app/utils/model_downloader.py /app/utils/model_config.json & \
 
-echo "Starting ComfyUI..."
 python /app/main.py --listen 0.0.0.0 --port 8188
