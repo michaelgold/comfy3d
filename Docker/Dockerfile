@@ -152,7 +152,7 @@ RUN source $VIRTUAL_ENV/bin/activate && \
     rm -rf /app/custom_nodes/ComfyUI-Hal.fun-Model-Downloader && \
     cd /app/custom_nodes && \
     git clone --depth=1 https://github.com/michaelgold/ComfyUI-Hal-Dot-Fun-Model-Downloader && \
-    cd /app/custom_nodes/ComfyUI-Hal-Dot-Fun-Model-Downloade && \
+    cd /app/custom_nodes/ComfyUI-Hal-Dot-Fun-Model-Downloader && \
     uv pip install -r requirements.txt && \
     cd /app/custom_nodes/ComfyUI-Manager && \
     git pull && \
