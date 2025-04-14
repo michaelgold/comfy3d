@@ -132,14 +132,30 @@ RUN source $VIRTUAL_ENV/bin/activate && \
     uv pip install -r requirements.txt && \
     find /app -type d -name '__pycache__' -exec rm -r {} + || true
 
+RUN source $VIRTUAL_ENV/bin/activate && \
+    git clone --depth=1 https://github.com/kijai/ComfyUI-KJNodes && \
+    git clone --depth=1 https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite && \
+    git clone --depth=1 https://github.com/kijai/ComfyUI-DepthAnythingV2 && \
+    git clone --depth=1 https://github.com/kijai/ComfyUI-WanVideoWrapper && \
+    cd /app/custom_nodes/ComfyUI-KJNodes && \
+    uv pip install -r requirements.txt && \
+    cd /app/custom_nodes/ComfyUI-VideoHelperSuite && \
+    uv pip install -r requirements.txt && \
+    cd /app/custom_nodes/ComfyUI-DepthAnythingV2 && \
+    uv pip install -r requirements.txt && \
+    cd /app/custom_nodes/ComfyUI-WanVideoWrapper && \
+    uv pip install -r requirements.txt 
+
 # Update some of our custom nodes
 RUN source $VIRTUAL_ENV/bin/activate && \
-    cd /app/custom_nodes/ComfyUI-Hal.fun-Model-Downloader && \
-    git pull && \
+    rm -rf /app/custom_nodes/ComfyUI-Hal.fun-Model-Downloader && \
+    git clone --depth=1 https://github.com/michaelgold/ComfyUI-Hal-Dot-Fun-Model-Downloader && \
+    cd /app/custom_nodes/ComfyUI-Hal-Dot-Fun-Model-Downloade && \
     uv pip install -r requirements.txt && \
     cd /app/custom_nodes/ComfyUI-Manager && \
     git pull && \
-    uv pip install -r requirements.txt
+    uv pip install -r requirements.txt 
+    
 
 COPY ./workflows /app/user/default/workflows
 COPY ./input /app/input
