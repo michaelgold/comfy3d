@@ -108,12 +108,13 @@ RUN source $VIRTUAL_ENV/bin/activate && \
 
 # Native build dependencies
 RUN mkdir -p deps_build && cd deps_build && \
+    git clone --recursive https://github.com/traveller59/spconv.git && \
     git clone --recursive https://github.com/ashawkey/diff-gaussian-rasterization.git && \
     git clone --recursive https://github.com/NVlabs/nvdiffrast.git && \
     git clone --recursive https://github.com/ashawkey/kiuikit.git && \
     git clone --recursive https://github.com/facebookresearch/pytorch3d.git && \
     git clone --recursive https://github.com/rusty1s/pytorch_scatter.git && \
-    for d in diff-gaussian-rasterization nvdiffrast kiuikit pytorch3d pytorch_scatter; do \
+    for d in spconv diff-gaussian-rasterization nvdiffrast kiuikit pytorch3d pytorch_scatter; do \
         cd $d && python setup.py bdist_wheel && pip install dist/*.whl && cd ..; \
     done && cd /app && rm -rf deps_build && \
     find /app -type d -name '__pycache__' -exec rm -r {} + || true
