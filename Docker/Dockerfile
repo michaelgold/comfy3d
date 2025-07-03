@@ -14,7 +14,7 @@ ENV TZ=UTC
 WORKDIR /app
 
 # Arguments for versioning
-ARG VERSION=v0.3.27
+ARG VERSION=v0.3.43
 ENV VERSION=${VERSION}
 
 
@@ -87,15 +87,13 @@ RUN mkdir -p /app/custom_nodes && cd /app/custom_nodes && \
     git clone --depth=1 https://github.com/ltdrdata/ComfyUI-Manager && \
     git clone --depth=1 https://github.com/cubiq/ComfyUI_essentials && \
     git clone --depth=1 https://github.com/kijai/ComfyUI-Hunyuan3DWrapper.git && \
-    git clone --depth=1 https://github.com/MrForExample/ComfyUI-3D-Pack && \
-    git clone --depth=1 https://github.com/michaelgold/ComfyUI-Hal.fun-Model-Downloader
+    git clone --depth=1 https://github.com/MrForExample/ComfyUI-3D-Pack 
 
 RUN source $VIRTUAL_ENV/bin/activate && \
     uv pip install -r custom_nodes/ComfyUI-Manager/requirements.txt && \
     uv pip install -r custom_nodes/ComfyUI_essentials/requirements.txt && \
     uv pip install -r custom_nodes/ComfyUI-Hunyuan3DWrapper/requirements.txt && \
     uv pip install -r custom_nodes/ComfyUI-3D-Pack/requirements.txt && \
-    uv pip install -r custom_nodes/ComfyUI-Hal.fun-Model-Downloader/requirements.txt && \
     uv pip install ./custom_nodes/ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/custom_rasterizer --no-build-isolation && \
     ls -lah ./custom_nodes/ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/custom_rasterizer && \
     du -sh ./custom_nodes/ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/custom_rasterizer && \
@@ -149,7 +147,6 @@ RUN source $VIRTUAL_ENV/bin/activate && \
 
 # Update some of our custom nodes
 RUN source $VIRTUAL_ENV/bin/activate && \
-    rm -rf /app/custom_nodes/ComfyUI-Hal.fun-Model-Downloader && \
     rm -rf /app/custom_nodes/ComfyUI-HF-Model-Downloader && \
     cd /app/custom_nodes && \
     git clone --depth=1 https://github.com/michaelgold/ComfyUI-HF-Model-Downloader && \
