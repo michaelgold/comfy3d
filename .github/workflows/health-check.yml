@@ -1,0 +1,13 @@
+name: Healt Check
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-runner:
+    runs-on: self-hosted
+    steps:
+      - name: Confirm runner is alive
+        run: echo "✅ Runner is working"
+      - name: Show docker version
+        run: docker version
