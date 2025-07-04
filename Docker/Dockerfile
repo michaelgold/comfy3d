@@ -35,17 +35,31 @@ ENV TORCH_CUDA_ARCH_LIST="6.1;7.0;7.5;8.0;8.6;8.9;9.0"
 
 # Install system dependencies
 RUN apt-get update && \
-    apt-get upgrade -y && \
     apt-get install -y \
     build-essential \
     curl \
-    ffmpeg \
+    wget \
     git \
+    ffmpeg \
     software-properties-common \
-    libegl1-mesa-dev libgl1-mesa-dev libglvnd-dev libsm6 libxext6 libxrender1 zlib1g-dev \
-    ninja-build wget && \
-    apt-get clean && \
+    libegl1-mesa-dev libgl1-mesa-dev libglvnd-dev libsm6 libxext6 libxrender1 \
+    ninja-build \
+    zlib1g-dev \
+    libssl-dev \
+    libbz2-dev \
+    libreadline-dev \
+    libsqlite3-dev \
+    libffi-dev \
+    liblzma-dev \
+    uuid-dev \
+    libgdbm-dev \
+    libnss3-dev \
+    libncurses5-dev \
+    libtk8.6 \
+    tk-dev \
+    && apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
 
 #install python
 WORKDIR /home/tmp/python
