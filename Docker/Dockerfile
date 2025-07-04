@@ -92,7 +92,7 @@ RUN python3 -m venv $VIRTUAL_ENV
 
 SHELL ["/bin/bash", "-c"]
 
-ARG DEPENDENCY_DATE = 2025-07-04
+ARG DEPENDENCY_DATE=2025-07-04
 
 # Install core Python dependencies
 RUN source $VIRTUAL_ENV/bin/activate && \
