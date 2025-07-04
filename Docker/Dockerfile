@@ -121,7 +121,7 @@ RUN source $VIRTUAL_ENV/bin/activate && \
     uv pip install -r custom_nodes/ComfyUI-Manager/requirements.txt && \
     uv pip install -r custom_nodes/ComfyUI_essentials/requirements.txt && \
     uv pip install -r custom_nodes/ComfyUI-Hunyuan3DWrapper/requirements.txt && \
-    uv pip install -r custom_nodes/ComfyUI-3D-Pack/requirements.txt && \
+    uv pip install -r custom_nodes/ComfyUI-3D-Pack/requirements.txt --no-build-isolation  && \
     uv pip install ./custom_nodes/ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/custom_rasterizer --no-build-isolation && \
     ls -lah ./custom_nodes/ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/custom_rasterizer && \
     du -sh ./custom_nodes/ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/custom_rasterizer && \
