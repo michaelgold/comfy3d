@@ -105,6 +105,8 @@ RUN source $VIRTUAL_ENV/bin/activate && \
     uv pip install wheel setuptools ninja pybind11 pytest packaging && \
     uv pip install plotly && \
     uv pip install -U xformers --index-url https://download.pytorch.org/whl/${TORCH_CUDA} && \
+    uv pip install pyhocon==0.3.61  && \
+    uv pip install pccm=0.4.16 && \
     find /app -type d -name '__pycache__' -exec rm -r {} + || true
 
 # Install custom nodes
@@ -149,8 +151,6 @@ RUN chmod a+x /app/utils/init.sh
 # fix for EGL
 ENV EGL_PLATFORM=surfaceless
 
-# fix for missing comfy3d deps
-RUN uv pip install pyhocon==0.3.61
 
 RUN source $VIRTUAL_ENV/bin/activate && \
     git clone https://github.com/comfyanonymous/ComfyUI.git /tmp/ComfyUI && \
