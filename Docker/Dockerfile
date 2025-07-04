@@ -4,6 +4,7 @@ ARG BASE_IMAGE=nvidia/cuda:12.6.3-cudnn-devel-ubuntu24.04
 FROM ${BASE_IMAGE} 
 ARG TORCH_CUDA=cu126
 ENV TORCH_CUDA=${TORCH_CUDA}
+ARG PYTHON_VER=3.11.10
 
 # Set TORCH_CUDA based on BASE_IMAGE
 
@@ -43,14 +44,21 @@ RUN apt-get update && \
     software-properties-common \
     libegl1-mesa-dev libgl1-mesa-dev libglvnd-dev libsm6 libxext6 libxrender1 \
     ninja-build wget && \
-    add-apt-repository -y ppa:deadsnakes/ppa && \
-    apt-get update && \
-    apt-get install -y python3.11 python3.11-venv python3.11-dev python3.11-distutils && \
-    update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1 && \
-    wget https://bootstrap.pypa.io/get-pip.py && python3 get-pip.py && \
-    rm get-pip.py && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
+#install python
+WORKDIR /home/tmp/python
+ADD https://www.python.org/ftp/python/$PYTHON_VER/Python-$PYTHON_VER.tgz Python.tgz
+RUN tar xzf Python.tgz
+WORKDIR /home/tmp/python/Python-$PYTHON_VER
+RUN ./configure --enable-shared --enable-optimizations
+RUN make install
+RUN rm -rf "/home/tmp/python"
+RUN ln -s /usr/local/bin/python3 /usr/local/bin/python
+# RUN ln -s /usr/bin/python3 /usr/bin/python
+RUN ldconfig
+
 
 # Install uv
 RUN wget https://github.com/astral-sh/uv/releases/latest/download/uv-x86_64-unknown-linux-gnu.tar.gz && \
@@ -124,6 +132,9 @@ RUN chmod a+x /app/utils/init.sh
 # fix for EGL
 ENV EGL_PLATFORM=surfaceless
 
+# fix for missing comfy3d deps
+RUN uv pip install pyhocon==0.3.61
+
 # Clone, check out, and install ComfyUI at specified version
 RUN source $VIRTUAL_ENV/bin/activate && \
     git clone --depth=1 --branch $VERSION https://github.com/comfyanonymous/ComfyUI /tmp/ComfyUI && \
@@ -144,7 +155,9 @@ RUN source $VIRTUAL_ENV/bin/activate && \
     cd /app/custom_nodes/ComfyUI-DepthAnythingV2 && \
     uv pip install -r requirements.txt && \
     cd /app/custom_nodes/ComfyUI-WanVideoWrapper && \
-    uv pip install -r requirements.txt 
+    uv pip install -r requirements.txt
+
+
 
 # Update some of our custom nodes
 RUN source $VIRTUAL_ENV/bin/activate && \
