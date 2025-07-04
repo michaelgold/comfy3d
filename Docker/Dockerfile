@@ -42,7 +42,7 @@ RUN apt-get update && \
     ffmpeg \
     git \
     software-properties-common \
-    libegl1-mesa-dev libgl1-mesa-dev libglvnd-dev libsm6 libxext6 libxrender1 \
+    libegl1-mesa-dev libgl1-mesa-dev libglvnd-dev libsm6 libxext6 libxrender1 zlib1g-dev \
     ninja-build wget && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
