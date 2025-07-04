@@ -92,6 +92,7 @@ RUN python3 -m venv $VIRTUAL_ENV
 
 SHELL ["/bin/bash", "-c"]
 
+ARG DEPENDENCY_DATE = 2025-07-04
 
 # Install core Python dependencies
 RUN source $VIRTUAL_ENV/bin/activate && \
@@ -151,12 +152,12 @@ ENV EGL_PLATFORM=surfaceless
 # fix for missing comfy3d deps
 RUN uv pip install pyhocon==0.3.61
 
-# Clone, check out, and install ComfyUI at specified version
 RUN source $VIRTUAL_ENV/bin/activate && \
-    git clone --depth=1 --branch $VERSION https://github.com/comfyanonymous/ComfyUI /tmp/ComfyUI && \
-    cp -a /tmp/ComfyUI/. /app && rm -rf /tmp/ComfyUI && \
-    uv pip install -r requirements.txt && \
-    find /app -type d -name '__pycache__' -exec rm -r {} + || true
+    git clone https://github.com/comfyanonymous/ComfyUI.git /tmp/ComfyUI && \
+    cd /tmp/ComfyUI && \
+    git checkout -b comfyui-$VERSION tags/$VERSION && \
+    git branch --set-upstream-to=origin/main comfyui-$VERSION && \
+    cp -a . /app && cd / && rm -rf /tmp/ComfyUI
 
 RUN source $VIRTUAL_ENV/bin/activate && \
     cd /app/custom_nodes && \
