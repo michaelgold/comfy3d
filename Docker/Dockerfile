@@ -107,6 +107,7 @@ RUN source $VIRTUAL_ENV/bin/activate && \
     uv pip install -U xformers --index-url https://download.pytorch.org/whl/${TORCH_CUDA} && \
     uv pip install pyhocon==0.3.61  && \
     uv pip install pccm=0.4.16 && \
+    uv pip install spconv-cu120==2.3.6 && \
     find /app -type d -name '__pycache__' -exec rm -r {} + || true
 
 # Install custom nodes
@@ -135,13 +136,12 @@ RUN source $VIRTUAL_ENV/bin/activate && \
 
 # Native build dependencies
 RUN mkdir -p deps_build && cd deps_build && \
-    git clone --recursive https://github.com/traveller59/spconv.git && \
     git clone --recursive https://github.com/ashawkey/diff-gaussian-rasterization.git && \
     git clone --recursive https://github.com/NVlabs/nvdiffrast.git && \
     git clone --recursive https://github.com/ashawkey/kiuikit.git && \
     git clone --recursive https://github.com/facebookresearch/pytorch3d.git && \
     git clone --recursive https://github.com/rusty1s/pytorch_scatter.git && \
-    for d in spconv diff-gaussian-rasterization nvdiffrast kiuikit pytorch3d pytorch_scatter; do \
+    for d in diff-gaussian-rasterization nvdiffrast kiuikit pytorch3d pytorch_scatter; do \
         cd $d && python setup.py bdist_wheel && pip install dist/*.whl && cd ..; \
     done && cd /app && rm -rf deps_build && \
     find /app -type d -name '__pycache__' -exec rm -r {} + || true
@@ -156,8 +156,10 @@ RUN source $VIRTUAL_ENV/bin/activate && \
     git clone https://github.com/comfyanonymous/ComfyUI.git /tmp/ComfyUI && \
     cd /tmp/ComfyUI && \
     git checkout -b comfyui-$VERSION tags/$VERSION && \
+    git fetch origin && \
     git branch --set-upstream-to=origin/main comfyui-$VERSION && \
     cp -a . /app && cd / && rm -rf /tmp/ComfyUI
+
 
 RUN source $VIRTUAL_ENV/bin/activate && \
     cd /app/custom_nodes && \
