@@ -73,6 +73,8 @@ RUN ln -s /usr/local/bin/python3 /usr/local/bin/python
 # RUN ln -s /usr/bin/python3 /usr/bin/python
 RUN ldconfig
 
+WORKDIR /app
+
 
 # Install uv
 RUN wget https://github.com/astral-sh/uv/releases/latest/download/uv-x86_64-unknown-linux-gnu.tar.gz && \
