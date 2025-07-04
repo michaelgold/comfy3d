@@ -157,7 +157,7 @@ RUN source $VIRTUAL_ENV/bin/activate && \
     cd /tmp/ComfyUI && \
     git checkout -b comfyui-$VERSION tags/$VERSION && \
     git fetch origin && \
-    git branch --set-upstream-to=origin/main comfyui-$VERSION && \
+    git branch --set-upstream-to=origin/master comfyui-$VERSION && \
     cp -a . /app && cd / && rm -rf /tmp/ComfyUI
 
 
