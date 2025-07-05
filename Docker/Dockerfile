@@ -161,6 +161,10 @@ RUN source $VIRTUAL_ENV/bin/activate && \
     git branch --set-upstream-to=origin/master comfyui-$VERSION && \
     cp -a . /app && cd / && rm -rf /tmp/ComfyUI
 
+# Install core ComfyUI dependencies
+RUN source $VIRTUAL_ENV/bin/activate && \
+    uv pip install -r /app/requirements.txt
+
 
 RUN source $VIRTUAL_ENV/bin/activate && \
     cd /app/custom_nodes && \
