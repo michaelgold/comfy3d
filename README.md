@@ -6,6 +6,10 @@ This setup provides out-of-the-box workflows for generating character sheets, te
 
 Docker containers are deployed to [https://hub.docker.com/r/michaelgold/comfy3d](https://hub.docker.com/r/michaelgold/comfy3d)
 
+<a target="_blank" href="https://lightning.ai/gold/studios/comfy3d">
+  <img src="https://pl-bolts-doc-images.s3.us-east-2.amazonaws.com/app-2/studio-badge.svg" alt="Open In Studio"/>
+</a>
+
 ---
 
 ## ✨ Features
