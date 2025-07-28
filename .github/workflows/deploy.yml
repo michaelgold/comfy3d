@@ -28,7 +28,7 @@ jobs:
     runs-on: self-hosted
     timeout-minutes: 120
     env:
-      VERSION: ${{ inputs.version || 'v0.3.43' }}
+      VERSION: ${{ inputs.version || 'v0.3.46' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
