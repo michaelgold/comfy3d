@@ -15,7 +15,7 @@ ENV TZ=UTC
 WORKDIR /app
 
 # Arguments for versioning
-ARG VERSION=v0.3.46
+ARG VERSION=v0.3.49
 ENV VERSION=${VERSION}
 
 
