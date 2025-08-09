@@ -14,12 +14,12 @@ services:
       - "8188:8188"
     
     volumes:
-      - ./output:/app/output:cached
-      - ./workflows:/app/user/default/workflows:cached
-      - ./input:/app/input:cached
-      - comfyui-nodes:/app/custom_nodes
-      - comfyui-models:/app/models
-      - comfyui-manager:/app/user/default/ComfyUI-Manager
+      - ./output:/app/comfy/output:cached
+      - ./workflows:/app/comfy/user/default/workflows:cached
+      - ./input:/app/comfy/input:cached
+      - comfyui-nodes:/app/comfy/custom_nodes
+      - comfyui-models:/app/comfy/models
+      - comfyui-manager:/app/comfy/user/default/ComfyUI-Manager
       - comfyui-u2net:/root/.u2net
       - .:/workspace
     command: /app/utils/init.sh

@@ -18,4 +18,4 @@ source /app/.venv/bin/activate
 # echo "Downloading models if needed and starting ComfyUI" 
 # python /app/utils/model_downloader.py /app/utils/model_config.json & \
 
-python /app/main.py --listen 0.0.0.0 --port 8188
+comfy launch -- --listen 0.0.0.0 --port 8188 --front-end-version Comfy-Org/ComfyUI_frontend@latest

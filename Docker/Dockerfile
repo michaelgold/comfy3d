@@ -66,7 +66,7 @@ WORKDIR /home/tmp/python
 ADD https://www.python.org/ftp/python/$PYTHON_VER/Python-$PYTHON_VER.tgz Python.tgz
 RUN tar xzf Python.tgz
 WORKDIR /home/tmp/python/Python-$PYTHON_VER
-RUN ./configure --enable-shared --enable-optimizations
+RUN ./configure --enable-shared --enable-optimizations --enable-loadable-sqlite-extensions
 RUN make install
 RUN rm -rf "/home/tmp/python"
 RUN ln -s /usr/local/bin/python3 /usr/local/bin/python
@@ -154,50 +154,58 @@ RUN chmod a+x /app/utils/init.sh
 ENV EGL_PLATFORM=surfaceless
 
 
+
+# rename /app to /app.old
+# RUN mv /app /app.old
+
+# Install comfy-cli and ComfyUI using comfy-cli
 RUN source $VIRTUAL_ENV/bin/activate && \
-    git clone https://github.com/comfyanonymous/ComfyUI.git /tmp/ComfyUI && \
-    cd /tmp/ComfyUI && \
-    git checkout -b comfyui-$VERSION tags/$VERSION && \
-    git fetch origin && \
-    git branch --set-upstream-to=origin/master comfyui-$VERSION && \
-    cp -a . /app && cd / && rm -rf /tmp/ComfyUI
+    pip install comfy-cli && \
+    comfy --skip-prompt --workspace=/app/comfy install --skip-torch-or-directml --nvidia && \
+    cp -r /app/custom_nodes/* /app/comfy/custom_nodes && \
+    rm -rf /app/custom_nodes
 
-# Install core ComfyUI dependencies
+# list app directory
+RUN ls -lah /app > output.txt && cat output.txt
+
+
+# RUN source $VIRTUAL_sENV/bin/activate && \
+#     git clone https://github.com/comfyanonymous/ComfyUI.git /tmp/ComfyUI && \
+#     cd /tmp/ComfyUI && \
+#     git checkout -b comfyui-$VERSION tags/$VERSION && \
+#     git fetch origin && \
+#     git branch --set-upstream-to=origin/master comfyui-$VERSION && \
+#     cp -a . /app && cd / && rm -rf /tmp/ComfyUI
+
+# # Install core ComfyUI dependencies
+# RUN source $VIRTUAL_ENV/bin/activate && \
+#     uv pip install -r /app/requirements.txt
+
+# install nodes
 RUN source $VIRTUAL_ENV/bin/activate && \
-    uv pip install -r /app/requirements.txt
-
-
-RUN source $VIRTUAL_ENV/bin/activate && \
-    cd /app/custom_nodes && \
-    git clone --depth=1 https://github.com/kijai/ComfyUI-KJNodes && \
-    git clone --depth=1 https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite && \
-    git clone --depth=1 https://github.com/kijai/ComfyUI-DepthAnythingV2 && \
-    git clone --depth=1 https://github.com/kijai/ComfyUI-WanVideoWrapper && \
-    cd /app/custom_nodes/ComfyUI-KJNodes && \
-    uv pip install -r requirements.txt && \
-    cd /app/custom_nodes/ComfyUI-VideoHelperSuite && \
-    uv pip install -r requirements.txt && \
-    cd /app/custom_nodes/ComfyUI-DepthAnythingV2 && \
-    uv pip install -r requirements.txt && \
-    cd /app/custom_nodes/ComfyUI-WanVideoWrapper && \
-    uv pip install -r requirements.txt
+    comfy node install https://github.com/kijai/ComfyUI-KJNodes && \
+    comfy node install https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite && \
+    comfy node install https://github.com/kijai/ComfyUI-DepthAnythingV2 && \
+    comfy node install https://github.com/kijai/ComfyUI-WanVideoWrapper && \
+    comfy node install https://github.com/rgthree/rgthree-comfy && \
+    comfy node install https://github.com/michaelgold/ComfyUI-HF-Model-Downloader
 
 
 
-# Update some of our custom nodes
-RUN source $VIRTUAL_ENV/bin/activate && \
-    rm -rf /app/custom_nodes/ComfyUI-HF-Model-Downloader && \
-    cd /app/custom_nodes && \
-    git clone --depth=1 https://github.com/michaelgold/ComfyUI-HF-Model-Downloader && \
-    cd /app/custom_nodes/ComfyUI-HF-Model-Downloader && \
-    uv pip install -r requirements.txt && \
-    cd /app/custom_nodes/ComfyUI-Manager && \
-    git pull && \
-    uv pip install -r requirements.txt 
+# # Update some of our custom nodes
+# RUN source $VIRTUAL_ENV/bin/activate && \
+#     rm -rf /app/custom_nodes/ComfyUI-HF-Model-Downloader && \
+#     cd /app/custom_nodes && \
+#     git clone --depth=1 https://github.com/michaelgold/ComfyUI-HF-Model-Downloader && \
+#     cd /app/custom_nodes/ComfyUI-HF-Model-Downloader && \
+#     uv pip install -r requirements.txt && \
+#     cd /app/custom_nodes/ComfyUI-Manager && \
+#     git pull && \
+#     uv pip install -r requirements.txt 
     
 
-COPY ./workflows /app/user/default/workflows
-COPY ./input /app/input
+COPY ./workflows /app/comfy/user/default/workflows
+COPY ./input /app/comfy/input
 EXPOSE 8188
 
 ENTRYPOINT ["/app/utils/init.sh"]
