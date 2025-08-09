@@ -109,7 +109,7 @@ RUN source $VIRTUAL_ENV/bin/activate && \
     uv pip install pyhocon==0.3.61  && \
     uv pip install pccm==0.4.16 && \
     uv pip install spconv-cu120==2.3.6 && \
-    uv pip install diso==0.1.4 && \
+    uv pip install diso==0.1.4 --no-build-isolation && \
     find /app -type d -name '__pycache__' -exec rm -r {} + || true
 
 # Install custom nodes
