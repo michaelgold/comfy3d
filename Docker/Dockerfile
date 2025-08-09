@@ -161,7 +161,7 @@ ENV EGL_PLATFORM=surfaceless
 # Install comfy-cli and ComfyUI using comfy-cli
 RUN source $VIRTUAL_ENV/bin/activate && \
     pip install comfy-cli && \
-    comfy --skip-prompt --workspace=/app/comfy install --skip-torch-or-directml --nvidia && \
+    comfy --skip-prompt --workspace=/app/comfy install --skip-torch-or-directml --nvidia --version $VERSION && \
     cp -r /app/custom_nodes/* /app/comfy/custom_nodes && \
     rm -rf /app/custom_nodes
 
