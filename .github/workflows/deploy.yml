@@ -66,8 +66,7 @@ jobs:
         cuda:
           - tag_suffix: cuda12.6
             latest: true
-          - tag_suffix: cuda12.1
-            latest: false
+
     env:
       VERSION: ${{ inputs.version || 'v0.3.49' }}
     steps:

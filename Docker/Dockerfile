@@ -1,26 +1,62 @@
-# Add build arguments with specific versions
-ARG BASE_IMAGE=nvidia/cuda:12.6.3-cudnn-devel-ubuntu24.04
-# Use the ARG in the FROM statement
-FROM ${BASE_IMAGE} 
-ARG TORCH_CUDA=cu126
-ENV TORCH_CUDA=${TORCH_CUDA}
+# ---------- Stage 0: base build tools ----------
+ARG CUDA_TAG=12.6.3-cudnn-devel-ubuntu24.04
+FROM nvidia/cuda:${CUDA_TAG} AS build-base
+
+ENV DEBIAN_FRONTEND=noninteractive PIP_PREFER_BINARY=1 CMAKE_BUILD_PARALLEL_LEVEL=8
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential curl wget git ninja-build \
+    zlib1g-dev libssl-dev libbz2-dev libreadline-dev \
+    sqlite3 libsqlite3-0 libsqlite3-dev libffi-dev liblzma-dev uuid-dev \
+    libegl1-mesa-dev libgl1-mesa-dev libglvnd-dev libsm6 libxext6 libxrender1 \
+    ffmpeg ca-certificates 
+
+
+# Clean up to reduce image size
+RUN apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
+
+# ---------- Stage 1: build Python ----------
 ARG PYTHON_VER=3.11.10
+FROM build-base AS python-builder
+WORKDIR /tmp/python
+ADD https://www.python.org/ftp/python/${PYTHON_VER}/Python-${PYTHON_VER}.tgz .
+RUN tar xzf Python-${PYTHON_VER}.tgz && cd Python-${PYTHON_VER} && \
+    ./configure --enable-shared --enable-optimizations --enable-loadable-sqlite-extensions && \
+    make -j$(nproc) && make install && ldconfig 
 
-# Set TORCH_CUDA based on BASE_IMAGE
+RUN ln -sf /usr/local/bin/python3 /usr/local/bin/python && \
+    ln -sf /usr/local/bin/pip3 /usr/local/bin/pip
+# Keep only what we need noted; we'll copy from this later
 
-# Prevent interactive prompts during package installation
-ENV DEBIAN_FRONTEND=noninteractive
-ENV TZ=UTC
+# ---------- Stage 2: venv + core deps (torch, xformers, etc.) ----------
+FROM python-builder AS venv-builder
+# Copy Python runtime from python-builder
+ENV PATH=/usr/local/bin:$PATH
+ENV VIRTUAL_ENV=/app/.venv
+RUN python -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
-WORKDIR /app
+# Install uv
+RUN wget -q https://github.com/astral-sh/uv/releases/latest/download/uv-x86_64-unknown-linux-gnu.tar.gz && \
+    mkdir -p uv-extract && tar -xzf uv-x86_64-unknown-linux-gnu.tar.gz -C uv-extract && \
+    cp uv-extract/uv-x86_64-unknown-linux-gnu/uv /usr/local/bin/uv && \
+    cp uv-extract/uv-x86_64-unknown-linux-gnu/uvx /usr/local/bin/uvx && \
+    chmod +x /usr/local/bin/uv /usr/local/bin/uvx && rm -rf uv-extract *.tar.gz
 
-# Arguments for versioning
-ARG VERSION=v0.3.49
-ENV VERSION=${VERSION}
+ARG TORCH_CUDA=cu126
+# Optional: copy constraints
+COPY ./constraints.txt /tmp/constraints.txt
+ENV PIP_CONSTRAINT=/tmp/constraints.txt
 
+RUN echo "Using ${TORCH_CUDA}" && \
+    uv pip install --upgrade pip wheel setuptools && \
+    uv pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/${TORCH_CUDA} && \
+    uv pip install -U xformers --index-url https://download.pytorch.org/whl/${TORCH_CUDA} && \
+    uv pip install torchsde pyhocon==0.3.61 pccm==0.4.16 plotly && \
+    uv pip install spconv-cu120==2.3.6 && \
+    find /app -type d -name '__pycache__' -exec rm -r {} + || true
 
-
-# Cuda environment
+# ---------- Stage 3: build CUDA-native wheels ----------
+FROM venv-builder AS native-builder
 ENV VIRTUAL_ENV="/app/.venv"
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
@@ -32,186 +68,88 @@ ENV CUDA_HOME="/usr/local/cuda"
 ENV LD_LIBRARY_PATH="/usr/local/lib:/usr/lib/x86_64-linux-gnu:/usr/local/cuda/lib64:/usr/local/cuda/targets/x86_64-linux/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 ENV PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True,garbage_collection_threshold:0.6,max_split_size_mb:128"
 ENV TORCH_CUDA_ARCH_LIST="6.1;7.0;7.5;8.0;8.6;8.9;9.0"
-
-
-# Install system dependencies
-RUN apt-get update && \
-    apt-get install -y \
-    build-essential \
-    curl \
-    wget \
-    git \
-    ffmpeg \
-    software-properties-common \
-    libegl1-mesa-dev libgl1-mesa-dev libglvnd-dev libsm6 libxext6 libxrender1 \
-    ninja-build \
-    zlib1g-dev \
-    libssl-dev \
-    libbz2-dev \
-    libreadline-dev \
-    sqlite3 \
-    libsqlite3-0 \
-    libsqlite3-dev \
-    libffi-dev \
-    liblzma-dev \
-    uuid-dev \
-    libgdbm-dev \
-    libnss3-dev \
-    libncurses5-dev \
-    libtk8.6 \
-    tk-dev \
-    && apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
-
-#install python
-WORKDIR /home/tmp/python
-ADD https://www.python.org/ftp/python/$PYTHON_VER/Python-$PYTHON_VER.tgz Python.tgz
-RUN tar xzf Python.tgz
-WORKDIR /home/tmp/python/Python-$PYTHON_VER
-RUN ./configure --enable-shared --enable-optimizations --enable-loadable-sqlite-extensions
-RUN make install
-RUN rm -rf "/home/tmp/python"
-RUN ln -s /usr/local/bin/python3 /usr/local/bin/python
-# RUN ln -s /usr/bin/python3 /usr/bin/python
-RUN ldconfig
-
-WORKDIR /app
-
-COPY ./constraints.txt /app/constraints.txt
-ENV PIP_CONSTRAINTS=/app/constraints.txt
-
-
-# Install uv
-RUN wget https://github.com/astral-sh/uv/releases/latest/download/uv-x86_64-unknown-linux-gnu.tar.gz && \
-    mkdir -p uv-extract && \
-    tar -xzf uv-x86_64-unknown-linux-gnu.tar.gz -C uv-extract && \
-    cp uv-extract/uv-x86_64-unknown-linux-gnu/uv /usr/local/bin/uv && \
-    cp uv-extract/uv-x86_64-unknown-linux-gnu/uvx /usr/local/bin/uvx && \
-    chmod +x /usr/local/bin/uv /usr/local/bin/uvx && \
-    rm -rf uv-extract uv-x86_64-unknown-linux-gnu.tar.gz
-
-# Set up virtual environment
-ENV VIRTUAL_ENV=/app/.venv
-ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-RUN python3 -m venv $VIRTUAL_ENV
-
-SHELL ["/bin/bash", "-c"]
-
-ARG DEPENDENCY_DATE=2025-07-04
-
-# Install core Python dependencies
-RUN source $VIRTUAL_ENV/bin/activate && \
-    echo "TORCH_CUDA: $TORCH_CUDA" && \
-    if [ "$TORCH_CUDA" = "cu126" ]; then \
-        uv pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/${TORCH_CUDA}; \
-    else \
-        uv pip install torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cu121; \
-    fi && \
-    uv pip install torchsde && \
-    uv pip install wheel setuptools ninja pybind11 pytest packaging && \
-    uv pip install plotly && \
-    uv pip install -U xformers --index-url https://download.pytorch.org/whl/${TORCH_CUDA} && \
-    uv pip install pyhocon==0.3.61  && \
-    uv pip install pccm==0.4.16 && \
-    uv pip install spconv-cu120==2.3.6 && \
-    uv pip install diso==0.1.4 --no-build-isolation && \
-    find /app -type d -name '__pycache__' -exec rm -r {} + || true
-
-# Install custom nodes
-RUN mkdir -p /app/custom_nodes && cd /app/custom_nodes && \
-    git clone --depth=1 https://github.com/ltdrdata/ComfyUI-Manager && \
-    git clone --depth=1 https://github.com/cubiq/ComfyUI_essentials && \
-    git clone --depth=1 https://github.com/kijai/ComfyUI-Hunyuan3DWrapper.git && \
-    git clone --depth=1 https://github.com/MrForExample/ComfyUI-3D-Pack 
-
-RUN source $VIRTUAL_ENV/bin/activate && \
-    uv pip install -r custom_nodes/ComfyUI-Manager/requirements.txt && \
-    uv pip install -r custom_nodes/ComfyUI_essentials/requirements.txt && \
-    uv pip install -r custom_nodes/ComfyUI-Hunyuan3DWrapper/requirements.txt && \
-    uv pip install -r custom_nodes/ComfyUI-3D-Pack/requirements.txt --no-build-isolation  && \
-    uv pip install ./custom_nodes/ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/custom_rasterizer --no-build-isolation && \
-    ls -lah ./custom_nodes/ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/custom_rasterizer && \
-    du -sh ./custom_nodes/ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/custom_rasterizer && \
-    rm -rf ./custom_nodes/ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/custom_rasterizer/build && \
-    rm -rf ./custom_nodes/ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/custom_rasterizer/custom_rasterizer.egg-info && \
-    uv pip install ./custom_nodes/ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/differentiable_renderer --no-build-isolation && \
-    ls -lah ./custom_nodes/ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/custom_rasterizer && \
-    du -sh ./custom_nodes/ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/custom_rasterizer && \
-    rm -rf ./custom_nodes/ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/custom_rasterizer/build && \
-    rm -rf ./custom_nodes/ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/custom_rasterizer/custom_rasterizer.egg-info &&\
-    find /app -type d -name '__pycache__' -exec rm -r {} + || true
-
-# Native build dependencies
-RUN mkdir -p deps_build && cd deps_build && \
-    git clone --recursive https://github.com/ashawkey/diff-gaussian-rasterization.git && \
+WORKDIR /app/deps_build
+RUN git clone --recursive https://github.com/ashawkey/diff-gaussian-rasterization.git && \
     git clone --recursive https://github.com/NVlabs/nvdiffrast.git && \
     git clone --recursive https://github.com/ashawkey/kiuikit.git && \
     git clone --recursive https://github.com/facebookresearch/pytorch3d.git && \
     git clone --recursive https://github.com/rusty1s/pytorch_scatter.git && \
     for d in diff-gaussian-rasterization nvdiffrast kiuikit pytorch3d pytorch_scatter; do \
         cd $d && python setup.py bdist_wheel && pip install dist/*.whl && cd ..; \
-    done && cd /app && rm -rf deps_build && \
+    done && \
+    cd /app && rm -rf deps_build && \
     find /app -type d -name '__pycache__' -exec rm -r {} + || true
 
-COPY ./utils /app/utils
-RUN chmod a+x /app/utils/init.sh
-# fix for EGL
-ENV EGL_PLATFORM=surfaceless
+# ---------- Stage 4: ComfyUI + nodes ----------
+FROM native-builder AS comfy-builder
+ARG VERSION=v0.3.49
+ENV VERSION=${VERSION}
+WORKDIR /app
+RUN uv pip install comfy-cli && \
+    comfy --skip-prompt --workspace=/app/comfy install --skip-torch-or-directml --nvidia --version $VERSION
 
+# Add custom nodes (git clones)
+RUN mkdir -p /app/custom_nodes && cd /app/custom_nodes && \
+    git clone --depth=1 https://github.com/kijai/ComfyUI-Hunyuan3DWrapper.git && \
+    git clone --depth=1 https://github.com/MrForExample/ComfyUI-3D-Pack
 
+# Install node requirements and local packages
+RUN uv pip install -r custom_nodes/ComfyUI-Hunyuan3DWrapper/requirements.txt && \
+    uv pip install -r custom_nodes/ComfyUI-3D-Pack/requirements.txt --no-build-isolation && \
+    uv pip install ./custom_nodes/ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/custom_rasterizer --no-build-isolation && \
+    uv pip install ./custom_nodes/ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/differentiable_renderer --no-build-isolation && \
+    cp -r /app/custom_nodes/* /app/comfy/custom_nodes && rm -rf /app/custom_nodes
 
-# rename /app to /app.old
-# RUN mv /app /app.old
-
-# Install comfy-cli and ComfyUI using comfy-cli
-RUN source $VIRTUAL_ENV/bin/activate && \
-    uv pip install comfy-cli && \
-    comfy --skip-prompt --workspace=/app/comfy install --skip-torch-or-directml --nvidia --version $VERSION && \
-    cp -r /app/custom_nodes/* /app/comfy/custom_nodes && \
-    rm -rf /app/custom_nodes
-
-# list app directory
-RUN ls -lah /app > output.txt && cat output.txt
-
-
-# RUN source $VIRTUAL_sENV/bin/activate && \
-#     git clone https://github.com/comfyanonymous/ComfyUI.git /tmp/ComfyUI && \
-#     cd /tmp/ComfyUI && \
-#     git checkout -b comfyui-$VERSION tags/$VERSION && \
-#     git fetch origin && \
-#     git branch --set-upstream-to=origin/master comfyui-$VERSION && \
-#     cp -a . /app && cd / && rm -rf /tmp/ComfyUI
-
-# # Install core ComfyUI dependencies
-# RUN source $VIRTUAL_ENV/bin/activate && \
-#     uv pip install -r /app/requirements.txt
-
-# install nodes
-RUN source $VIRTUAL_ENV/bin/activate && \
-    comfy node install https://github.com/kijai/ComfyUI-KJNodes && \
-    comfy node install https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite && \
-    comfy node install https://github.com/kijai/ComfyUI-DepthAnythingV2 && \
-    comfy node install https://github.com/kijai/ComfyUI-WanVideoWrapper && \
-    comfy node install https://github.com/rgthree/rgthree-comfy && \
-    comfy node install https://github.com/michaelgold/ComfyUI-HF-Model-Downloader
-
-
-
-# # Update some of our custom nodes
-# RUN source $VIRTUAL_ENV/bin/activate && \
-#     rm -rf /app/custom_nodes/ComfyUI-HF-Model-Downloader && \
-#     cd /app/custom_nodes && \
-#     git clone --depth=1 https://github.com/michaelgold/ComfyUI-HF-Model-Downloader && \
-#     cd /app/custom_nodes/ComfyUI-HF-Model-Downloader && \
-#     uv pip install -r requirements.txt && \
-#     cd /app/custom_nodes/ComfyUI-Manager && \
-#     git pull && \
-#     uv pip install -r requirements.txt 
-    
-
+# Copy workflows/inputs, scripts
 COPY ./workflows /app/comfy/user/default/workflows
 COPY ./input /app/comfy/input
-EXPOSE 8188
+COPY ./utils /app/utils
+RUN chmod a+x /app/utils/init.sh
 
+
+
+# ---------- Stage 5: final runtime ----------
+FROM nvidia/cuda:12.6.3-cudnn-runtime-ubuntu24.04 AS final
+ENV DEBIAN_FRONTEND=noninteractive \
+    NVIDIA_VISIBLE_DEVICES=all \
+    NVIDIA_DRIVER_CAPABILITIES=compute,utility,graphics \
+    PYOPENGL_PLATFORM=egl \
+    EGL_PLATFORM=surfaceless \
+    PYTHONUNBUFFERED=1
+
+# Minimal runtime libs you actually need
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libegl1-mesa-dev libgl1-mesa-dev libglvnd-dev libsm6 libxext6 libxrender1 \
+    git ca-certificates && rm -rf /var/lib/apt/lists/*
+
+# Bring in Python runtime and venv
+COPY --from=python-builder /usr/local/ /usr/local/
+ENV PATH=/usr/local/bin:$PATH
+# Update library cache and add library path for shared Python libraries
+RUN ldconfig
+COPY --from=comfy-builder /app/.venv /app/.venv
+ENV VIRTUAL_ENV=/app/.venv
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
+# Bring in ComfyUI workspace (and, if desired, models)
+COPY --from=comfy-builder /app/comfy /app/comfy
+# Or: COPY --from=downloader /app/comfy/models /app/comfy/models
+
+# Set workspace and install nodes with non-interactive flags
+WORKDIR /app/comfy
+RUN comfy --skip-prompt --workspace=/app/comfy node install https://github.com/cubiq/ComfyUI_essentials && \
+    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/kijai/ComfyUI-KJNodes && \
+    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite && \
+    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/kijai/ComfyUI-DepthAnythingV2 && \
+    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/kijai/ComfyUI-WanVideoWrapper && \
+    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/rgthree/rgthree-comfy && \
+    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/michaelgold/ComfyUI-HF-Model-Downloader
+
+
+
+
+# force reinstall of numpy using the constraints file
+RUN uv pip install "numpy<2" --force-reinstall --no-build-isolation
+
+EXPOSE 8188
 ENTRYPOINT ["/app/utils/init.sh"]
