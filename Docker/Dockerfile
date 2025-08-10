@@ -29,9 +29,10 @@ ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility,graphics
 ENV PYOPENGL_PLATFORM=egl
 ENV FORCE_CUDA="1"
 ENV CUDA_HOME="/usr/local/cuda"
-ENV LD_LIBRARY_PATH="/usr/local/cuda/lib64:/usr/local/cuda/targets/x86_64-linux/lib:/usr/lib64:${LD_LIBRARY_PATH}"
+ENV LD_LIBRARY_PATH="/usr/local/lib:/usr/lib/x86_64-linux-gnu:/usr/local/cuda/lib64:/usr/local/cuda/targets/x86_64-linux/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 ENV PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True,garbage_collection_threshold:0.6,max_split_size_mb:128"
 ENV TORCH_CUDA_ARCH_LIST="6.1;7.0;7.5;8.0;8.6;8.9;9.0"
+
 
 # Install system dependencies
 RUN apt-get update && \
@@ -48,6 +49,8 @@ RUN apt-get update && \
     libssl-dev \
     libbz2-dev \
     libreadline-dev \
+    sqlite3 \
+    libsqlite3-0 \
     libsqlite3-dev \
     libffi-dev \
     liblzma-dev \
@@ -74,6 +77,9 @@ RUN ln -s /usr/local/bin/python3 /usr/local/bin/python
 RUN ldconfig
 
 WORKDIR /app
+
+COPY ./constraints.txt /app/constraints.txt
+ENV PIP_CONSTRAINTS=/app/constraints.txt
 
 
 # Install uv
@@ -160,7 +166,7 @@ ENV EGL_PLATFORM=surfaceless
 
 # Install comfy-cli and ComfyUI using comfy-cli
 RUN source $VIRTUAL_ENV/bin/activate && \
-    pip install comfy-cli && \
+    uv pip install comfy-cli && \
     comfy --skip-prompt --workspace=/app/comfy install --skip-torch-or-directml --nvidia --version $VERSION && \
     cp -r /app/custom_nodes/* /app/comfy/custom_nodes && \
     rm -rf /app/custom_nodes
