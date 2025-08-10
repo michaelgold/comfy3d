@@ -22,9 +22,6 @@ jobs:
           - base_image: nvidia/cuda:12.6.3-cudnn-devel-ubuntu24.04
             torch_cuda: cu126
             tag_suffix: cuda12.6
-          - base_image: nvidia/cuda:12.1.1-cudnn8-devel-ubuntu22.04
-            torch_cuda: cu121
-            tag_suffix: cuda12.1
     runs-on: self-hosted
     timeout-minutes: 120
     env:
