@@ -88,6 +88,16 @@ WORKDIR /app
 RUN uv pip install comfy-cli && \
     comfy --skip-prompt --workspace=/app/comfy install --skip-torch-or-directml --nvidia --version $VERSION
 
+# # Force reinstall of torch
+# RUN echo "Using ${TORCH_CUDA}" && \
+#     uv pip install --upgrade pip wheel setuptools && \
+#     uv pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/${TORCH_CUDA} --force-reinstall && \
+#     uv pip install -U xformers --index-url https://download.pytorch.org/whl/${TORCH_CUDA} --force-reinstall --no-cache-dir && \
+#     uv pip install torchsde pyhocon==0.3.61 pccm==0.4.16 plotly && \
+#     uv pip install spconv-cu120==2.3.6 && \
+#     find /app -type d -name '__pycache__' -exec rm -r {} + || true
+
+
 # Add custom nodes (git clones)
 RUN mkdir -p /app/custom_nodes && cd /app/custom_nodes && \
     git clone --depth=1 https://github.com/kijai/ComfyUI-Hunyuan3DWrapper.git && \
@@ -132,6 +142,19 @@ RUN ldconfig
 COPY --from=comfy-builder /app/.venv /app/.venv
 ENV VIRTUAL_ENV=/app/.venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV NVIDIA_VISIBLE_DEVICES=all
+ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility,graphics
+ENV PYOPENGL_PLATFORM=egl
+ENV FORCE_CUDA="1"
+ENV CUDA_HOME="/usr/local/cuda"
+ENV LD_LIBRARY_PATH="/usr/local/lib:/usr/lib/x86_64-linux-gnu:/usr/local/cuda/lib64:/usr/local/cuda/targets/x86_64-linux/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+ENV PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True,garbage_collection_threshold:0.6,max_split_size_mb:128"
+ENV TORCH_CUDA_ARCH_LIST="6.1;7.0;7.5;8.0;8.6;8.9;9.0"
+ARG TORCH_CUDA=cu126
+ENV TORCH_CUDA=${TORCH_CUDA}
+
 
 # Bring in ComfyUI workspace (and, if desired, models)
 COPY --from=comfy-builder /app/comfy /app/comfy
@@ -149,9 +172,7 @@ RUN comfy --skip-prompt --workspace=/app/comfy node install https://github.com/c
     comfy --skip-prompt --workspace=/app/comfy node install https://github.com/michaelgold/ComfyUI-HF-Model-Downloader
 
 # force reinstall of numpy and fix pytorch compatibility issues
-RUN uv pip install "numpy<2" --force-reinstall --no-build-isolation && \
-    uv pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126 --force-reinstall --no-cache-dir && \
-    uv pip install xformers --index-url https://download.pytorch.org/whl/cu126 --force-reinstall --no-cache-dir
+RUN uv pip install "numpy<2" --force-reinstall --no-build-isolation 
 
 EXPOSE 8188
 ENTRYPOINT ["/app/utils/init.sh"]
