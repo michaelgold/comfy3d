@@ -54,9 +54,10 @@ RUN uv pip install comfy-cli && \
 RUN echo "Using ${TORCH_CUDA}" && \
     uv pip install --upgrade pip wheel setuptools && \
     # uv pip install torch torchvision torchaudio  && \
-    uv pip install -U xformers --force-reinstall --no-cache-dir && \
+    # uv pip install -U xformers --force-reinstall --no-cache-dir && \
     uv pip install torchsde pyhocon==0.3.61 pccm==0.4.16 plotly && \
     uv pip install spconv-cu120==2.3.6 && \
+    uv pip install sageattention && \
     find /app -type d -name '__pycache__' -exec rm -r {} + || true
 
 # ---------- Stage 3: build CUDA-native wheels ----------
