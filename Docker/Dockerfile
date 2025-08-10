@@ -46,11 +46,13 @@ ARG TORCH_CUDA=cu128
 # Optional: copy constraints
 COPY ./constraints.txt /tmp/constraints.txt
 ENV PIP_CONSTRAINT=/tmp/constraints.txt
+RUN uv pip install comfy-cli && \
+    comfy --skip-prompt --workspace=/app/comfy install --nvidia --version $VERSION
 
 RUN echo "Using ${TORCH_CUDA}" && \
     uv pip install --upgrade pip wheel setuptools && \
-    uv pip install torch torchvision torchaudio  && \
-    uv pip install -U xformers --index-url https://download.pytorch.org/whl/${TORCH_CUDA} --force-reinstall --no-cache-dir && \
+    # uv pip install torch torchvision torchaudio  && \
+    uv pip install -U xformers --force-reinstall --no-cache-dir && \
     uv pip install torchsde pyhocon==0.3.61 pccm==0.4.16 plotly && \
     uv pip install spconv-cu120==2.3.6 && \
     find /app -type d -name '__pycache__' -exec rm -r {} + || true
@@ -92,8 +94,6 @@ ENV VIRTUAL_ENV=/app/.venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 WORKDIR /app
 
-RUN uv pip install comfy-cli && \
-    comfy --skip-prompt --workspace=/app/comfy install --nvidia --skip-torch-or-directml --version $VERSION
 
 # # Force reinstall of torch
 # RUN echo "Using ${TORCH_CUDA}" && \
