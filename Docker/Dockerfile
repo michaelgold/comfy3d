@@ -50,7 +50,7 @@ ENV PIP_CONSTRAINT=/tmp/constraints.txt
 RUN echo "Using ${TORCH_CUDA}" && \
     uv pip install --upgrade pip wheel setuptools && \
     uv pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/${TORCH_CUDA} && \
-    uv pip install -U xformers --index-url https://download.pytorch.org/whl/${TORCH_CUDA} && \
+    uv pip install -U xformers --index-url https://download.pytorch.org/whl/${TORCH_CUDA} --force-reinstall --no-cache-dir && \
     uv pip install torchsde pyhocon==0.3.61 pccm==0.4.16 plotly && \
     uv pip install spconv-cu120==2.3.6 && \
     find /app -type d -name '__pycache__' -exec rm -r {} + || true
@@ -110,12 +110,14 @@ RUN chmod a+x /app/utils/init.sh
 
 # ---------- Stage 5: final runtime ----------
 FROM nvidia/cuda:12.6.3-cudnn-runtime-ubuntu24.04 AS final
+
 ENV DEBIAN_FRONTEND=noninteractive \
     NVIDIA_VISIBLE_DEVICES=all \
     NVIDIA_DRIVER_CAPABILITIES=compute,utility,graphics \
     PYOPENGL_PLATFORM=egl \
     EGL_PLATFORM=surfaceless \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 
+    
 
 # Minimal runtime libs you actually need
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -146,8 +148,10 @@ RUN comfy --skip-prompt --workspace=/app/comfy node install https://github.com/c
     comfy --skip-prompt --workspace=/app/comfy node install https://github.com/rgthree/rgthree-comfy && \
     comfy --skip-prompt --workspace=/app/comfy node install https://github.com/michaelgold/ComfyUI-HF-Model-Downloader
 
-# force reinstall of numpy using the constraints file
-RUN uv pip install "numpy<2" --force-reinstall --no-build-isolation
+# force reinstall of numpy and fix pytorch compatibility issues
+RUN uv pip install "numpy<2" --force-reinstall --no-build-isolation && \
+    uv pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126 --force-reinstall --no-cache-dir && \
+    uv pip install xformers --index-url https://download.pytorch.org/whl/cu126 --force-reinstall --no-cache-dir
 
 EXPOSE 8188
 ENTRYPOINT ["/app/utils/init.sh"]
