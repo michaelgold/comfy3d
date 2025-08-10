@@ -133,6 +133,7 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 # Bring in ComfyUI workspace (and, if desired, models)
 COPY --from=comfy-builder /app/comfy /app/comfy
+COPY --from=comfy-builder /app/utils /app/utils
 # Or: COPY --from=downloader /app/comfy/models /app/comfy/models
 
 # Set workspace and install nodes with non-interactive flags
@@ -144,9 +145,6 @@ RUN comfy --skip-prompt --workspace=/app/comfy node install https://github.com/c
     comfy --skip-prompt --workspace=/app/comfy node install https://github.com/kijai/ComfyUI-WanVideoWrapper && \
     comfy --skip-prompt --workspace=/app/comfy node install https://github.com/rgthree/rgthree-comfy && \
     comfy --skip-prompt --workspace=/app/comfy node install https://github.com/michaelgold/ComfyUI-HF-Model-Downloader
-
-
-
 
 # force reinstall of numpy using the constraints file
 RUN uv pip install "numpy<2" --force-reinstall --no-build-isolation
