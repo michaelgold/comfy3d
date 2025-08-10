@@ -96,7 +96,7 @@ RUN git clone --recursive https://github.com/ashawkey/diff-gaussian-rasterizatio
 
 # 4) PRIME the torch_extensions cache by importing the CUDA binding now
 #    (this compiles into /root/.cache/torch_extensions for arch 8.6)
-    python /tmp/utils/build_diffrast.py
+    python /tmp/utils/build_diffrast.py && \
 
 # 5) Clean
     cd /app && rm -rf /app/deps_build && \
