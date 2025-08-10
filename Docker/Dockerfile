@@ -77,6 +77,8 @@ ENV TORCH_CUDA_ARCH_LIST="6.1;7.0;7.5;8.0;8.6;8.9;9.0"
 # Prebuild CUDA deps and prime nvdiffrast's torch extension cache
 WORKDIR /app/deps_build
 
+COPY ./utils /tmp/utils
+
 # 1) Clone
 RUN git clone --recursive https://github.com/ashawkey/diff-gaussian-rasterization.git && \
     git clone --recursive https://github.com/NVlabs/nvdiffrast.git && \
@@ -94,14 +96,7 @@ RUN git clone --recursive https://github.com/ashawkey/diff-gaussian-rasterizatio
 
 # 4) PRIME the torch_extensions cache by importing the CUDA binding now
 #    (this compiles into /root/.cache/torch_extensions for arch 8.6)
-    python - <<'PY'
-import torch
-import nvdiffrast.torch as dr  # triggers build into torch_extensions cache
-print("Torch:", torch.__version__, "CUDA:", torch.version.cuda)
-from torch.utils.cpp_extension import get_default_build_root
-print("torch_extensions cache:", get_default_build_root())
-PY
-    && \
+    python /tmp/utils/build_diffrast.py
 
 # 5) Clean
     cd /app && rm -rf /app/deps_build && \
