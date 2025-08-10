@@ -74,18 +74,38 @@ ENV LD_LIBRARY_PATH="/usr/local/lib:/usr/lib/x86_64-linux-gnu:/usr/local/cuda/li
 ENV PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True,garbage_collection_threshold:0.6,max_split_size_mb:128"
 ENV TORCH_CUDA_ARCH_LIST="6.1;7.0;7.5;8.0;8.6;8.9;9.0"
 
+# Prebuild CUDA deps and prime nvdiffrast's torch extension cache
 WORKDIR /app/deps_build
+
+# 1) Clone
 RUN git clone --recursive https://github.com/ashawkey/diff-gaussian-rasterization.git && \
     git clone --recursive https://github.com/NVlabs/nvdiffrast.git && \
     git clone --recursive https://github.com/ashawkey/kiuikit.git && \
     git clone --recursive https://github.com/facebookresearch/pytorch3d.git && \
     git clone --recursive https://github.com/rusty1s/pytorch_scatter.git && \
-     for d in diff-gaussian-rasterization nvdiffrast kiuikit pytorch3d pytorch_scatter; do \
-       cd $d && python setup.py bdist_wheel && pip install dist/*.whl && cd ..; \
-     done && \
-    cd /app && rm -rf deps_build && \
-    find /app -type d -name '__pycache__' -exec rm -r {} + || true
 
+# 2) Build wheels for the libs that ship proper extension wheels
+    for d in diff-gaussian-rasterization kiuikit pytorch3d pytorch_scatter; do \
+      cd $d && python setup.py bdist_wheel && pip install --no-cache-dir dist/*.whl && cd ..; \
+    done && \
+
+# 3) Build/install nvdiffrast IN-TREE (it uses torch.cpp_extension under the hood)
+    cd nvdiffrast && pip install --no-build-isolation . && cd .. && \
+
+# 4) PRIME the torch_extensions cache by importing the CUDA binding now
+#    (this compiles into /root/.cache/torch_extensions for arch 8.6)
+    python - <<'PY'
+import torch
+import nvdiffrast.torch as dr  # triggers build into torch_extensions cache
+print("Torch:", torch.__version__, "CUDA:", torch.version.cuda)
+from torch.utils.cpp_extension import get_default_build_root
+print("torch_extensions cache:", get_default_build_root())
+PY
+    && \
+
+# 5) Clean
+    cd /app && rm -rf /app/deps_build && \
+    find /app -type d -name '__pycache__' -exec rm -r {} + || true
 
     # ---------- Stage 4: ComfyUI + nodes ----------
 FROM native-builder AS comfy-builder
@@ -150,6 +170,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Bring in Python runtime and venv
 COPY --from=python-builder /usr/local/ /usr/local/
+
 ENV PATH=/usr/local/bin:$PATH
 # Update library cache and add library path for shared Python libraries
 RUN ldconfig
@@ -173,7 +194,8 @@ ENV TORCH_CUDA=${TORCH_CUDA}
 # Bring in ComfyUI workspace (and, if desired, models)
 COPY --from=comfy-builder /app/comfy /app/comfy
 COPY --from=comfy-builder /app/utils /app/utils
-# Or: COPY --from=downloader /app/comfy/models /app/comfy/models
+# Or: COPY --from=downloader /app/comfy/models /app/comfy/# after you copy the venv and workspace
+COPY --from=comfy-builder /root/.cache/torch_extensions /root/.cache/torch_extensions
 
 # Set workspace and install nodes with non-interactive flags
 WORKDIR /app/comfy
