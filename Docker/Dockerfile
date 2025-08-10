@@ -34,6 +34,7 @@ ENV PATH=/usr/local/bin:$PATH
 ENV VIRTUAL_ENV=/app/.venv
 RUN python -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+ARG VERSION=v0.3.49
 
 # Install uv
 RUN wget -q https://github.com/astral-sh/uv/releases/latest/download/uv-x86_64-unknown-linux-gnu.tar.gz && \
@@ -46,6 +47,7 @@ ARG TORCH_CUDA=cu128
 # Optional: copy constraints
 COPY ./constraints.txt /tmp/constraints.txt
 ENV PIP_CONSTRAINT=/tmp/constraints.txt
+
 RUN uv pip install comfy-cli && \
     comfy --skip-prompt --workspace=/app/comfy install --nvidia --version $VERSION
 
@@ -70,7 +72,7 @@ ENV CUDA_HOME="/usr/local/cuda"
 ENV LD_LIBRARY_PATH="/usr/local/lib:/usr/lib/x86_64-linux-gnu:/usr/local/cuda/lib64:/usr/local/cuda/targets/x86_64-linux/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 ENV PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True,garbage_collection_threshold:0.6,max_split_size_mb:128"
 ENV TORCH_CUDA_ARCH_LIST="6.1;7.0;7.5;8.0;8.6;8.9;9.0"
-ARG VERSION=v0.3.49
+
 WORKDIR /app/deps_build
 RUN git clone --recursive https://github.com/ashawkey/diff-gaussian-rasterization.git && \
     git clone --recursive https://github.com/NVlabs/nvdiffrast.git && \
