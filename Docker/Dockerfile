@@ -74,9 +74,9 @@ RUN git clone --recursive https://github.com/ashawkey/diff-gaussian-rasterizatio
     git clone --recursive https://github.com/ashawkey/kiuikit.git && \
     git clone --recursive https://github.com/facebookresearch/pytorch3d.git && \
     git clone --recursive https://github.com/rusty1s/pytorch_scatter.git && \
-    for d in diff-gaussian-rasterization nvdiffrast kiuikit pytorch3d pytorch_scatter; do \
-        cd $d && python setup.py bdist_wheel && pip install dist/*.whl && cd ..; \
-    done && \
+    # for d in diff-gaussian-rasterization nvdiffrast kiuikit pytorch3d pytorch_scatter; do \
+    #   cd $d && python setup.py bdist_wheel && pip install dist/*.whl && cd ..; \
+    # done && \
     cd /app && rm -rf deps_build && \
     find /app -type d -name '__pycache__' -exec rm -r {} + || true
 
@@ -115,7 +115,7 @@ RUN mkdir -p /app/custom_nodes && cd /app/custom_nodes && \
 
 # Install node requirements and local packages
 RUN uv pip install -r custom_nodes/ComfyUI-Hunyuan3DWrapper/requirements.txt && \
-    uv pip install -r custom_nodes/ComfyUI-3D-Pack/requirements.txt --no-build-isolation && \
+    # uv pip install -r custom_nodes/ComfyUI-3D-Pack/requirements.txt --no-build-isolation && \
     uv pip install ./custom_nodes/ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/custom_rasterizer --no-build-isolation && \
     uv pip install ./custom_nodes/ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/differentiable_renderer --no-build-isolation && \
     cp -r /app/custom_nodes/* /app/comfy/custom_nodes && rm -rf /app/custom_nodes
