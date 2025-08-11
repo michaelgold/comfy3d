@@ -80,6 +80,11 @@ WORKDIR /app/deps_build
 
 COPY ./utils /tmp/utils
 
+ENV TORCH_EXTENSIONS_DIR=/opt/torch_extensions
+
+# Make sure the dir exists
+RUN mkdir -p ${TORCH_EXTENSIONS_DIR}
+
 # 1) Clone
 RUN git clone --recursive https://github.com/ashawkey/diff-gaussian-rasterization.git && \
     git clone --recursive https://github.com/NVlabs/nvdiffrast.git && \
@@ -95,13 +100,15 @@ RUN git clone --recursive https://github.com/ashawkey/diff-gaussian-rasterizatio
 # 3) Build/install nvdiffrast IN-TREE (it uses torch.cpp_extension under the hood)
     cd nvdiffrast && pip install --no-build-isolation . && cd .. && \
 
-# 4) PRIME the torch_extensions cache by importing the CUDA binding now
-#    (this compiles into /root/.cache/torch_extensions for arch 8.6)
-    # python /tmp/utils/build_diffrast.py && \
 
 # 5) Clean
     cd /app && rm -rf /app/deps_build && \
     find /app -type d -name '__pycache__' -exec rm -r {} + || true
+
+# Prime the torch extension cache (compiles into $TORCH_EXTENSIONS_DIR)
+RUN python -c "import nvdiffrast.torch as _; \
+import os; p=os.environ.get('TORCH_EXTENSIONS_DIR'); print('Primed at', p); \
+import glob; print('Files:', glob.glob(p+'/**', recursive=True))"
 
     # ---------- Stage 4: ComfyUI + nodes ----------
 FROM native-builder AS comfy-builder
@@ -151,8 +158,8 @@ RUN chmod a+x /app/utils/init.sh
 
 
 # ---------- Stage 5: final runtime ----------
-# FROM nvidia/cuda:12.6.3-cudnn-runtime-ubuntu24.04 AS final
-FROM nvidia/cuda:12.6.3-cudnn-devel-ubuntu24.04 AS final
+FROM nvidia/cuda:12.6.3-cudnn-runtime-ubuntu24.04 AS final
+# FROM nvidia/cuda:12.6.3-cudnn-devel-ubuntu24.04 AS final
 
 ENV DEBIAN_FRONTEND=noninteractive \
     NVIDIA_VISIBLE_DEVICES=all \
@@ -160,7 +167,9 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PYOPENGL_PLATFORM=egl \
     EGL_PLATFORM=surfaceless \
     PYTHONUNBUFFERED=1 
-    
+ENV TORCH_EXTENSIONS_DIR=/opt/torch_extensions
+
+COPY --from=comfy-builder /opt/torch_extensions /opt/torch_extensions
 
 # Minimal runtime libs you actually need
 RUN apt-get update && apt-get install -y --no-install-recommends \
