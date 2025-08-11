@@ -47,9 +47,14 @@ ARG TORCH_CUDA=cu128
 # Optional: copy constraints
 COPY ./constraints.txt /tmp/constraints.txt
 ENV PIP_CONSTRAINT=/tmp/constraints.txt
+ENV UV_NO_CACHE=1
+ENV PIP_NO_CACHE_DIR=1
 
 RUN uv pip install comfy-cli && \
     comfy --skip-prompt --workspace=/app/comfy install --nvidia --version $VERSION
+
+# use version of torch compatible with xformers
+RUN uv pip install xformers torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
 
 RUN echo "Using ${TORCH_CUDA}" && \
     uv pip install --upgrade pip wheel setuptools && \
@@ -107,15 +112,6 @@ RUN git clone --recursive https://github.com/ashawkey/diff-gaussian-rasterizatio
 
 # Prime the torch extension cache (compiles into $TORCH_EXTENSIONS_DIR)
 # PRIME the torch extension cache now (this triggers the cpp_extension build)
-RUN python -c "import os; \
-os.environ['TORCH_EXTENSIONS_DIR']='/app/.venv/torch_extensions'; \
-os.environ['TORCH_CUDA_ARCH_LIST']='6.1;7.0;7.5;8.0;8.6;8.9;9.0'; \
-import nvdiffrast.torch as _; \
-print('Primed at', os.environ['TORCH_EXTENSIONS_DIR'])"
-
-# Optional: check that the .so exists
-RUN python -c "import glob; \
-print(glob.glob('/app/.venv/torch_extensions/**/nvdiffrast_plugin*.so', recursive=True))"
 
     # ---------- Stage 4: ComfyUI + nodes ----------
 FROM native-builder AS comfy-builder
@@ -160,13 +156,25 @@ COPY ./input /app/comfy/input
 COPY ./utils /app/utils
 RUN chmod a+x /app/utils/init.sh
 
+WORKDIR /app/comfy
+RUN comfy --skip-prompt --workspace=/app/comfy node install https://github.com/cubiq/ComfyUI_essentials && \
+    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/kijai/ComfyUI-KJNodes && \
+    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite && \
+    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/kijai/ComfyUI-DepthAnythingV2 && \
+    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/kijai/ComfyUI-WanVideoWrapper && \
+    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/rgthree/rgthree-comfy && \
+    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/michaelgold/ComfyUI-HF-Model-Downloader
+
+# force reinstall of numpy and fix pytorch compatibility issues
+RUN uv pip install diso "numpy<2" --force-reinstall --no-build-isolation 
+
 
 
 
 
 # ---------- Stage 5: final runtime ----------
-FROM nvidia/cuda:12.6.3-cudnn-runtime-ubuntu24.04 AS final
-# FROM nvidia/cuda:12.6.3-cudnn-devel-ubuntu24.04 AS final
+# FROM nvidia/cuda:12.6.3-cudnn-runtime-ubuntu24.04 AS final
+FROM nvidia/cuda:12.6.3-cudnn-devel-ubuntu24.04 AS final
 
 ENV DEBIAN_FRONTEND=noninteractive \
     NVIDIA_VISIBLE_DEVICES=all \
@@ -183,6 +191,8 @@ ENV TORCH_EXTENSIONS_DIR=/app/.venv/torch_extensions
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libegl1-mesa-dev libgl1-mesa-dev libglvnd-dev libsm6 libxext6 libxrender1 \
     git ca-certificates && rm -rf /var/lib/apt/lists/*
+
+RUN apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
 # Bring in Python runtime and venv
 COPY --from=python-builder /usr/local/ /usr/local/
@@ -217,16 +227,7 @@ COPY --from=comfy-builder /app/utils /app/utils
 
 # Set workspace and install nodes with non-interactive flags
 WORKDIR /app/comfy
-RUN comfy --skip-prompt --workspace=/app/comfy node install https://github.com/cubiq/ComfyUI_essentials && \
-    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/kijai/ComfyUI-KJNodes && \
-    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite && \
-    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/kijai/ComfyUI-DepthAnythingV2 && \
-    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/kijai/ComfyUI-WanVideoWrapper && \
-    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/rgthree/rgthree-comfy && \
-    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/michaelgold/ComfyUI-HF-Model-Downloader
-
-# force reinstall of numpy and fix pytorch compatibility issues
-RUN uv pip install "numpy<2" --force-reinstall --no-build-isolation 
+RUN comfy --skip-prompt --workspace=/app/comfy tracking disable
 
 EXPOSE 8188
 ENTRYPOINT ["/app/utils/init.sh"]
