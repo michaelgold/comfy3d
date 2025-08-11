@@ -58,6 +58,7 @@ RUN echo "Using ${TORCH_CUDA}" && \
     uv pip install torchsde pyhocon==0.3.61 pccm==0.4.16 plotly && \
     uv pip install spconv-cu120==2.3.6 && \
     uv pip install sageattention && \
+    uv pip install diso && \
     find /app -type d -name '__pycache__' -exec rm -r {} + || true
 
 # ---------- Stage 3: build CUDA-native wheels ----------
@@ -96,7 +97,7 @@ RUN git clone --recursive https://github.com/ashawkey/diff-gaussian-rasterizatio
 
 # 4) PRIME the torch_extensions cache by importing the CUDA binding now
 #    (this compiles into /root/.cache/torch_extensions for arch 8.6)
-    python /tmp/utils/build_diffrast.py && \
+    # python /tmp/utils/build_diffrast.py && \
 
 # 5) Clean
     cd /app && rm -rf /app/deps_build && \
@@ -147,8 +148,11 @@ RUN chmod a+x /app/utils/init.sh
 
 
 
+
+
 # ---------- Stage 5: final runtime ----------
-FROM nvidia/cuda:12.6.3-cudnn-runtime-ubuntu24.04 AS final
+# FROM nvidia/cuda:12.6.3-cudnn-runtime-ubuntu24.04 AS final
+FROM nvidia/cuda:12.6.3-cudnn-devel-ubuntu24.04 AS final
 
 ENV DEBIAN_FRONTEND=noninteractive \
     NVIDIA_VISIBLE_DEVICES=all \
@@ -190,7 +194,9 @@ ENV TORCH_CUDA=${TORCH_CUDA}
 COPY --from=comfy-builder /app/comfy /app/comfy
 COPY --from=comfy-builder /app/utils /app/utils
 # Or: COPY --from=downloader /app/comfy/models /app/comfy/# after you copy the venv and workspace
-COPY --from=comfy-builder /root/.cache/torch_extensions /root/.cache/torch_extensions
+# COPY --from=comfy-builder /root/.cache/torch_extensions /root/.cache/torch_extensions
+
+
 
 # Set workspace and install nodes with non-interactive flags
 WORKDIR /app/comfy
