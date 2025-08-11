@@ -192,7 +192,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
 # Bring in Python runtime and venv
-COPY --from=python-builder /usr/local/ /usr/local/
+COPY --from=python-builder /usr/local/bin/python* /usr/local/bin/
+COPY --from=python-builder /usr/local/lib/python3.11 /usr/local/lib/python3.11
+COPY --from=python-builder /usr/local/lib/libpython3.11.so* /usr/local/lib/
+COPY --from=python-builder /usr/local/include/python3.11 /usr/local/include/python3.11
 
 ENV PATH=/usr/local/bin:$PATH
 # Update library cache and add library path for shared Python libraries
@@ -223,7 +226,7 @@ COPY --from=comfy-builder /app/utils /app/utils
 
 
 # Set workspace and install nodes with non-interactive flags
-WORKDIR /app/comfyanonymous
+WORKDIR /app/comfy
 RUN comfy --skip-prompt --workspace=/app/comfy tracking disable
 
 EXPOSE 8188
