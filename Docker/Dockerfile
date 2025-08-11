@@ -80,7 +80,7 @@ WORKDIR /app/deps_build
 
 COPY ./utils /tmp/utils
 
-ENV TORCH_EXTENSIONS_DIR=/opt/torch_extensions
+ENV TORCH_EXTENSIONS_DIR=/app/.venv/torch_extensions 
 
 # Make sure the dir exists
 RUN mkdir -p ${TORCH_EXTENSIONS_DIR}
@@ -106,9 +106,16 @@ RUN git clone --recursive https://github.com/ashawkey/diff-gaussian-rasterizatio
     find /app -type d -name '__pycache__' -exec rm -r {} + || true
 
 # Prime the torch extension cache (compiles into $TORCH_EXTENSIONS_DIR)
-RUN python -c "import nvdiffrast.torch as _; \
-import os; p=os.environ.get('TORCH_EXTENSIONS_DIR'); print('Primed at', p); \
-import glob; print('Files:', glob.glob(p+'/**', recursive=True))"
+# PRIME the torch extension cache now (this triggers the cpp_extension build)
+RUN python -c "import os; \
+os.environ['TORCH_EXTENSIONS_DIR']='/app/.venv/torch_extensions'; \
+os.environ['TORCH_CUDA_ARCH_LIST']='6.1;7.0;7.5;8.0;8.6;8.9;9.0'; \
+import nvdiffrast.torch as _; \
+print('Primed at', os.environ['TORCH_EXTENSIONS_DIR'])"
+
+# Optional: check that the .so exists
+RUN python -c "import glob; \
+print(glob.glob('/app/.venv/torch_extensions/**/nvdiffrast_plugin*.so', recursive=True))"
 
     # ---------- Stage 4: ComfyUI + nodes ----------
 FROM native-builder AS comfy-builder
@@ -167,9 +174,10 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PYOPENGL_PLATFORM=egl \
     EGL_PLATFORM=surfaceless \
     PYTHONUNBUFFERED=1 
-ENV TORCH_EXTENSIONS_DIR=/opt/torch_extensions
 
-COPY --from=comfy-builder /opt/torch_extensions /opt/torch_extensions
+ENV TORCH_EXTENSIONS_DIR=/app/.venv/torch_extensions 
+
+# COPY --from=comfy-builder /opt/torch_extensions /opt/torch_extensions
 
 # Minimal runtime libs you actually need
 RUN apt-get update && apt-get install -y --no-install-recommends \
