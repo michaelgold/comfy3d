@@ -62,7 +62,6 @@ RUN echo "Using ${TORCH_CUDA}" && \
     # uv pip install -U xformers --force-reinstall --no-cache-dir && \
     uv pip install torchsde pyhocon==0.3.61 pccm==0.4.16 plotly && \
     uv pip install spconv-cu120==2.3.6 && \
-    uv pip install diso && \
     find /app -type d -name '__pycache__' -exec rm -r {} + || true
 
 # ---------- Stage 3: build CUDA-native wheels ----------
