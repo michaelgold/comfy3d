@@ -43,7 +43,7 @@ RUN wget -q https://github.com/astral-sh/uv/releases/latest/download/uv-x86_64-u
     cp uv-extract/uv-x86_64-unknown-linux-gnu/uvx /usr/local/bin/uvx && \
     chmod +x /usr/local/bin/uv /usr/local/bin/uvx && rm -rf uv-extract *.tar.gz
 
-ARG TORCH_CUDA=cu128
+ARG TORCH_CUDA=cu126
 # Optional: copy constraints
 COPY ./constraints.txt /tmp/constraints.txt
 ENV PIP_CONSTRAINT=/tmp/constraints.txt
@@ -54,7 +54,7 @@ RUN uv pip install comfy-cli && \
     comfy --skip-prompt --workspace=/app/comfy install --nvidia --version $VERSION
 
 # use version of torch compatible with xformers
-RUN uv pip install xformers torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
+RUN uv pip install xformers torchvision torchaudio --index-url https://download.pytorch.org/whl/$TORCH_CUDA
 
 RUN echo "Using ${TORCH_CUDA}" && \
     uv pip install --upgrade pip wheel setuptools && \
@@ -62,7 +62,6 @@ RUN echo "Using ${TORCH_CUDA}" && \
     # uv pip install -U xformers --force-reinstall --no-cache-dir && \
     uv pip install torchsde pyhocon==0.3.61 pccm==0.4.16 plotly && \
     uv pip install spconv-cu120==2.3.6 && \
-    uv pip install sageattention && \
     uv pip install diso && \
     find /app -type d -name '__pycache__' -exec rm -r {} + || true
 
@@ -116,7 +115,6 @@ RUN git clone --recursive https://github.com/ashawkey/diff-gaussian-rasterizatio
     # ---------- Stage 4: ComfyUI + nodes ----------
 FROM native-builder AS comfy-builder
 
-ARG TORCH_CUDA=cu128
 ARG CUDA_VERSION_FOR_COMFY=12.6
 ENV CUDA_VERSION_FOR_COMFY=${CUDA_VERSION_FOR_COMFY}
 ENV VERSION=${VERSION}
@@ -213,7 +211,7 @@ ENV CUDA_HOME="/usr/local/cuda"
 ENV LD_LIBRARY_PATH="/usr/local/lib:/usr/lib/x86_64-linux-gnu:/usr/local/cuda/lib64:/usr/local/cuda/targets/x86_64-linux/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 ENV PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True,garbage_collection_threshold:0.6,max_split_size_mb:128"
 ENV TORCH_CUDA_ARCH_LIST="6.1;7.0;7.5;8.0;8.6;8.9;9.0"
-ARG TORCH_CUDA=cu128
+ARG TORCH_CUDA=cu126
 ENV TORCH_CUDA=${TORCH_CUDA}
 
 
@@ -226,7 +224,7 @@ COPY --from=comfy-builder /app/utils /app/utils
 
 
 # Set workspace and install nodes with non-interactive flags
-WORKDIR /app/comfy
+WORKDIR /app/comfyanonymous
 RUN comfy --skip-prompt --workspace=/app/comfy tracking disable
 
 EXPOSE 8188
