@@ -23,7 +23,6 @@ services:
       - comfyui-manager:/app/comfy/user/default/ComfyUI-Manager
       - comfyui-u2net:/root/.u2net
       - .:/workspace
-    command: /app/utils/init.sh
 
 
 volumes:
