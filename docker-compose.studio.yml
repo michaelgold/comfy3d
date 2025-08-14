@@ -13,18 +13,16 @@ services:
     ports:
       - "8188:8188"
     volumes:
-      - ./output:/app/output:cached
-      - ./workflows:/app/user/default/workflows:cached
-      - ./input:/app/input:cached
-      - ./custom_nodes:/app/custom_nodes:cached
-      - ./models:/app/models:cached
-      - comfyui-manager:/app/user/default/ComfyUI-Manager
+      - ./output:/app/comfy/output:cached
+      - ./workflows:/app/comfy/user/default/workflows:cached
+      - ./input:/app/comfy/input:cached
+      - ./custom_nodes:/app/comfy/custom_nodes:cached
+      - ./models:/app/comfy/models:cached
+      - comfyui-manager:/app/comfy/user/default/ComfyUI-Manager
       - comfyui-u2net:/root/.u2net
       - .:/workspace
 
 volumes:
-  comfyui-nodes:
-  comfyui-models:
   comfyui-manager:
   comfyui-u2net:
 
