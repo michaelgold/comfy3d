@@ -161,6 +161,9 @@ RUN comfy --skip-prompt --workspace=/app/comfy node install https://github.com/c
     comfy --skip-prompt --workspace=/app/comfy node install https://github.com/kijai/ComfyUI-WanVideoWrapper && \
     comfy --skip-prompt --workspace=/app/comfy node install https://github.com/rgthree/rgthree-comfy && \
     comfy --skip-prompt --workspace=/app/comfy node install https://github.com/michaelgold/ComfyUI-HF-Model-Downloader
+    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/Acly/comfyui-inpaint-nodes
+    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/lquesada/ComfyUI-Inpaint-CropAndStitch
+
 
 # force reinstall of numpy and fix pytorch compatibility issues
 RUN uv pip install diso "numpy<2" --force-reinstall --no-build-isolation 
@@ -186,7 +189,7 @@ ENV TORCH_EXTENSIONS_DIR=/app/.venv/torch_extensions
 
 # Minimal runtime libs you actually need
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libegl1-mesa-dev libgl1-mesa-dev libglvnd-dev libsm6 libxext6 libxrender1 \
+    libegl1-mesa-dev libgl1-mesa-dev libglvnd-dev libsm6 libxext6 libxrender1 wget curl \
     git ca-certificates && rm -rf /var/lib/apt/lists/*
 
 RUN apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
