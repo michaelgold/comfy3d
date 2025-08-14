@@ -64,7 +64,49 @@ RUN echo "Using ${TORCH_CUDA}" && \
     uv pip install spconv-cu120==2.3.6 && \
     find /app -type d -name '__pycache__' -exec rm -r {} + || true
 
-# ---------- Stage 3: build CUDA-native wheels ----------
+# ---------- Stage 3a: build individual wheels ----------
+FROM venv-builder AS wheel-builder
+ENV VIRTUAL_ENV="/app/.venv"
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV NVIDIA_VISIBLE_DEVICES=all
+ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility,graphics
+ENV PYOPENGL_PLATFORM=egl
+ENV FORCE_CUDA="1"
+ENV CUDA_HOME="/usr/local/cuda"
+ENV LD_LIBRARY_PATH="/usr/local/lib:/usr/lib/x86_64-linux-gnu:/usr/local/cuda/lib64:/usr/local/cuda/targets/x86_64-linux/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+ENV PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True,garbage_collection_threshold:0.6,max_split_size_mb:128"
+ENV TORCH_CUDA_ARCH_LIST="6.1;7.0;7.5;8.0;8.6;8.9;9.0"
+
+WORKDIR /wheels
+
+# Build each package in separate RUN commands for better caching
+RUN git clone --recursive https://github.com/ashawkey/diff-gaussian-rasterization.git && \
+    cd diff-gaussian-rasterization && \
+    python setup.py bdist_wheel && \
+    cp dist/*.whl /wheels/
+
+RUN git clone --recursive https://github.com/ashawkey/kiuikit.git && \
+    cd kiuikit && \
+    python setup.py bdist_wheel && \
+    cp dist/*.whl /wheels/
+
+RUN git clone --recursive https://github.com/facebookresearch/pytorch3d.git && \
+    cd pytorch3d && \
+    python setup.py bdist_wheel && \
+    cp dist/*.whl /wheels/
+
+RUN git clone --recursive https://github.com/rusty1s/pytorch_scatter.git && \
+    cd pytorch_scatter && \
+    python setup.py bdist_wheel && \
+    cp dist/*.whl /wheels/
+
+RUN git clone --recursive https://github.com/NVlabs/nvdiffrast.git && \
+    cd nvdiffrast && \
+    python setup.py bdist_wheel && \
+    cp dist/*.whl /wheels/
+
+# ---------- Stage 3b: install wheels + nvdiffrast ----------
 FROM venv-builder AS native-builder
 ENV VIRTUAL_ENV="/app/.venv"
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -78,38 +120,18 @@ ENV LD_LIBRARY_PATH="/usr/local/lib:/usr/lib/x86_64-linux-gnu:/usr/local/cuda/li
 ENV PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True,garbage_collection_threshold:0.6,max_split_size_mb:128"
 ENV TORCH_CUDA_ARCH_LIST="6.1;7.0;7.5;8.0;8.6;8.9;9.0"
 
-# Prebuild CUDA deps and prime nvdiffrast's torch extension cache
-WORKDIR /app/deps_build
-
 COPY ./utils /tmp/utils
 
 ENV TORCH_EXTENSIONS_DIR=/app/.venv/torch_extensions 
-
-# Make sure the dir exists
 RUN mkdir -p ${TORCH_EXTENSIONS_DIR}
 
-# 1) Clone
-RUN git clone --recursive https://github.com/ashawkey/diff-gaussian-rasterization.git && \
-    git clone --recursive https://github.com/NVlabs/nvdiffrast.git && \
-    git clone --recursive https://github.com/ashawkey/kiuikit.git && \
-    git clone --recursive https://github.com/facebookresearch/pytorch3d.git && \
-    git clone --recursive https://github.com/rusty1s/pytorch_scatter.git && \
+# Copy and install pre-built wheels
+COPY --from=wheel-builder /wheels/*.whl /tmp/wheels/
+RUN uv pip install --no-cache-dir /tmp/wheels/*.whl
 
-# 2) Build wheels for the libs that ship proper extension wheels
-    for d in diff-gaussian-rasterization kiuikit pytorch3d pytorch_scatter; do \
-      cd $d && python setup.py bdist_wheel && pip install --no-cache-dir dist/*.whl && cd ..; \
-    done && \
-
-# 3) Build/install nvdiffrast IN-TREE (it uses torch.cpp_extension under the hood)
-    cd nvdiffrast && pip install --no-build-isolation . && cd .. && \
-
-
-# 5) Clean
-    cd /app && rm -rf /app/deps_build && \
+# Clean up
+RUN rm -rf /tmp/wheels && \
     find /app -type d -name '__pycache__' -exec rm -r {} + || true
-
-# Prime the torch extension cache (compiles into $TORCH_EXTENSIONS_DIR)
-# PRIME the torch extension cache now (this triggers the cpp_extension build)
 
     # ---------- Stage 4: ComfyUI + nodes ----------
 FROM native-builder AS comfy-builder
