@@ -160,8 +160,8 @@ RUN comfy --skip-prompt --workspace=/app/comfy node install https://github.com/c
     comfy --skip-prompt --workspace=/app/comfy node install https://github.com/kijai/ComfyUI-DepthAnythingV2 && \
     comfy --skip-prompt --workspace=/app/comfy node install https://github.com/kijai/ComfyUI-WanVideoWrapper && \
     comfy --skip-prompt --workspace=/app/comfy node install https://github.com/rgthree/rgthree-comfy && \
-    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/michaelgold/ComfyUI-HF-Model-Downloader
-    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/Acly/comfyui-inpaint-nodes
+    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/michaelgold/ComfyUI-HF-Model-Downloader && \
+    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/Acly/comfyui-inpaint-nodes && \
     comfy --skip-prompt --workspace=/app/comfy node install https://github.com/lquesada/ComfyUI-Inpaint-CropAndStitch
 
 
