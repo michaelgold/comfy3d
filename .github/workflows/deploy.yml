@@ -12,7 +12,10 @@ on:
       version:
         description: ComfyUI Version
         required: false
-        default: v0.3.49
+        default: v0.3.50
+
+env:
+  DEFAULT_VERSION: v0.3.50
 
 jobs:
   build-and-test:
@@ -25,7 +28,7 @@ jobs:
     runs-on: self-hosted
     timeout-minutes: 120
     env:
-      VERSION: ${{ inputs.version || 'v0.3.49' }}
+      VERSION: ${{ inputs.version || env.DEFAULT_VERSION }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -65,7 +68,7 @@ jobs:
             latest: true
 
     env:
-      VERSION: ${{ inputs.version || 'v0.3.49' }}
+      VERSION: ${{ inputs.version || env.DEFAULT_VERSION }}
     steps:
       - name: Log in to Docker Hub
         uses: docker/login-action@v3

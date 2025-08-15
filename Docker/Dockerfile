@@ -44,7 +44,7 @@ RUN ldconfig
 ENV VIRTUAL_ENV=/app/.venv
 RUN python -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-ARG VERSION=v0.3.49
+ARG VERSION=v0.3.50
 
 # Install uv
 RUN wget -q https://github.com/astral-sh/uv/releases/latest/download/uv-x86_64-unknown-linux-gnu.tar.gz && \
