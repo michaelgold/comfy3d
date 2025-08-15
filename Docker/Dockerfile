@@ -61,7 +61,7 @@ ENV UV_NO_CACHE=1
 ENV PIP_NO_CACHE_DIR=1
 
 RUN uv pip install comfy-cli && \
-    comfy --skip-prompt --workspace=/app/comfy install --nvidia --version $VERSION
+    comfy --skip-prompt --workspace=/app/comfy install --nvidia --version $VERSION --fast-deps
 
 # use version of torch compatible with xformers
 # RUN uv pip install xformers torchvision torchaudio --index-url https://download.pytorch.org/whl/$TORCH_CUDA
@@ -179,9 +179,6 @@ ENV VERSION=${VERSION}
 ENV VIRTUAL_ENV=/app/.venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libgl1 libegl1 \
-    && rm -rf /var/lib/apt/lists/*
 
 
 
@@ -211,36 +208,18 @@ WORKDIR /app
 
 
 
-# Copy workflows/inputs, scripts
-COPY ./workflows /app/comfy/user/default/workflows
-COPY ./input /app/comfy/input
-COPY ./utils /app/utils
-RUN chmod a+x /app/utils/init.sh
+
 
 # force reinstall of numpy and fix pytorch compatibility issues
 
 
-WORKDIR /app/comfy
-RUN comfy --skip-prompt --workspace=/app/comfy node install https://github.com/cubiq/ComfyUI_essentials && \
-    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/kijai/ComfyUI-KJNodes && \
-    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite && \
-    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/kijai/ComfyUI-DepthAnythingV2 && \
-    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/kijai/ComfyUI-WanVideoWrapper && \
-    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/rgthree/rgthree-comfy && \
-    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/michaelgold/ComfyUI-HF-Model-Downloader && \
-    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/Acly/comfyui-inpaint-nodes && \
-    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/lquesada/ComfyUI-Inpaint-CropAndStitch && \
-    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/kijai/ComfyUI-Hunyuan3DWrapper.git && \
-    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/MrForExample/ComfyUI-3D-Pack
 
 
 
 
 
-
-
-# # ---------- Stage 5: final runtime ----------
-# # FROM nvidia/cuda:12.6.3-cudnn-runtime-ubuntu24.04 AS final
+# ---------- Stage 5: final runtime ----------
+FROM nvidia/cuda:12.6.3-cudnn-runtime-ubuntu24.04 AS final
 # FROM nvidia/cuda:12.6.3-cudnn-devel-ubuntu24.04 AS final
 
 # ENV DEBIAN_FRONTEND=noninteractive \
@@ -260,30 +239,37 @@ RUN comfy --skip-prompt --workspace=/app/comfy node install https://github.com/c
 #     git ca-certificates && rm -rf /var/lib/apt/lists/* && \
 #     apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
-# # Bring in Python runtime and venv
-# COPY --from=python-builder /usr/local/bin/python* /usr/local/bin/
-# COPY --from=python-builder /usr/local/lib/python3.11 /usr/local/lib/python3.11
-# COPY --from=python-builder /usr/local/lib/libpython3.11.so* /usr/local/lib/
-# COPY --from=python-builder /usr/local/include/python3.11 /usr/local/include/python3.11
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgl1 libegl1 cuda-minimal-build-12-6 libcusparse-dev-12-6 libcublas-dev-12-6 libcusolver-dev-12-6 wget curl git \
+    && apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
-# ENV PATH=/usr/local/bin:$PATH
-# # Update library cache and add library path for shared Python libraries
-# RUN ldconfig
-# COPY --from=comfy-builder /app/.venv /app/.venv
-# ENV VIRTUAL_ENV=/app/.venv
-# ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-# ENV PYTHONDONTWRITEBYTECODE=1
-# ENV PYTHONUNBUFFERED=1
-# ENV NVIDIA_VISIBLE_DEVICES=all
-# ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility,graphics
-# ENV PYOPENGL_PLATFORM=egl
-# ENV FORCE_CUDA="1"
-# ENV CUDA_HOME="/usr/local/cuda"
-# ENV LD_LIBRARY_PATH="/usr/local/lib:/usr/lib/x86_64-linux-gnu:/usr/local/cuda/lib64:/usr/local/cuda/targets/x86_64-linux/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+
+# # Bring in Python runtime and venv
+COPY --from=python-builder /usr/local/bin/python* /usr/local/bin/
+COPY --from=python-builder /usr/local/lib/python3.11 /usr/local/lib/python3.11
+COPY --from=python-builder /usr/local/lib/libpython3.11.so* /usr/local/lib/
+COPY --from=python-builder /usr/local/include/python3.11 /usr/local/include/python3.11
+
+# copy app directory from comfy-builder
+COPY --from=comfy-builder /app /app
+
+ENV PATH=/usr/local/bin:$PATH
+# Update library cache and add library path for shared Python libraries
+RUN ldconfig
+ENV VIRTUAL_ENV=/app/.venv
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV NVIDIA_VISIBLE_DEVICES=all
+ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility,graphics
+ENV PYOPENGL_PLATFORM=egl
+ENV FORCE_CUDA="1"
+ENV CUDA_HOME="/usr/local/cuda"
+ENV LD_LIBRARY_PATH="/usr/local/lib:/usr/lib/x86_64-linux-gnu:/usr/local/cuda/lib64:/usr/local/cuda/targets/x86_64-linux/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 # ENV PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True,garbage_collection_threshold:0.6,max_split_size_mb:128"
-# ENV TORCH_CUDA_ARCH_LIST="6.1;7.0;7.5;8.0;8.6;8.9;9.0"
-# ARG TORCH_CUDA=cu126
-# ENV TORCH_CUDA=${TORCH_CUDA}
+ENV TORCH_CUDA_ARCH_LIST="6.1;7.0;7.5;8.0;8.6;8.9;9.0"
+ARG TORCH_CUDA=cu126
+ENV TORCH_CUDA=${TORCH_CUDA}
 
 
 # # Bring in ComfyUI workspace (and, if desired, models)
@@ -294,9 +280,33 @@ RUN comfy --skip-prompt --workspace=/app/comfy node install https://github.com/c
 
 
 
+
+WORKDIR /app/comfy
+RUN comfy --skip-prompt --workspace=/app/comfy node install https://github.com/cubiq/ComfyUI_essentials && \
+    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/kijai/ComfyUI-KJNodes && \
+    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite && \
+    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/kijai/ComfyUI-DepthAnythingV2 && \
+    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/kijai/ComfyUI-WanVideoWrapper && \
+    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/rgthree/rgthree-comfy && \
+    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/michaelgold/ComfyUI-HF-Model-Downloader && \
+    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/Acly/comfyui-inpaint-nodes && \
+    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/lquesada/ComfyUI-Inpaint-CropAndStitch && \
+    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/kijai/ComfyUI-Hunyuan3DWrapper.git && \
+    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/MrForExample/ComfyUI-3D-Pack
+
+
+
+
+
 # Set workspace and install nodes with non-interactive flags
 WORKDIR /app/comfy
 RUN comfy --skip-prompt --workspace=/app/comfy tracking disable
+
+# Copy workflows/inputs, scripts
+COPY ./workflows /app/comfy/user/default/workflows
+COPY ./input /app/comfy/input
+COPY ./utils /app/utils
+RUN chmod a+x /app/utils/init.sh
 
 EXPOSE 8188
 ENTRYPOINT ["/app/utils/init.sh"]
