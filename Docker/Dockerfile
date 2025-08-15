@@ -8,11 +8,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     zlib1g-dev libssl-dev libbz2-dev libreadline-dev \
     sqlite3 libsqlite3-0 libsqlite3-dev libffi-dev liblzma-dev uuid-dev \
     libegl1-mesa-dev libgl1-mesa-dev libglvnd-dev libsm6 libxext6 libxrender1 \
-    ffmpeg ca-certificates 
-
-
-# Clean up to reduce image size
-RUN apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
+    ffmpeg ca-certificates && \ 
+    apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
 # ---------- Stage 1: build Python ----------
 ARG PYTHON_VER=3.11.10
@@ -212,9 +209,8 @@ ENV TORCH_EXTENSIONS_DIR=/app/.venv/torch_extensions
 # Minimal runtime libs you actually need
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libegl1-mesa-dev libgl1-mesa-dev libglvnd-dev libsm6 libxext6 libxrender1 wget curl \
-    git ca-certificates && rm -rf /var/lib/apt/lists/*
-
-RUN apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
+    git ca-certificates && rm -rf /var/lib/apt/lists/* && \
+    apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
 # Bring in Python runtime and venv
 COPY --from=python-builder /usr/local/bin/python* /usr/local/bin/
