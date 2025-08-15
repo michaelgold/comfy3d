@@ -25,9 +25,22 @@ RUN ln -sf /usr/local/bin/python3 /usr/local/bin/python && \
 # Keep only what we need noted; we'll copy from this later
 
 # ---------- Stage 2: venv + core deps (torch, xformers, etc.) ----------
-FROM python-builder AS venv-builder
+FROM nvidia/cuda:${CUDA_TAG} AS venv-builder
 # Copy Python runtime from python-builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends curl wget git ca-certificates && \ 
+    apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
+
+COPY --from=python-builder /usr/local/bin/python* /usr/local/bin/
+COPY --from=python-builder /usr/local/lib/python3.11 /usr/local/lib/python3.11
+COPY --from=python-builder /usr/local/lib/libpython3.11.so* /usr/local/lib/
+COPY --from=python-builder /usr/local/include/python3.11 /usr/local/include/python3.11
+
 ENV PATH=/usr/local/bin:$PATH
+# Update library cache and add library path for shared Python libraries
+RUN ldconfig
+
+
 ENV VIRTUAL_ENV=/app/.venv
 RUN python -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
@@ -51,14 +64,13 @@ RUN uv pip install comfy-cli && \
     comfy --skip-prompt --workspace=/app/comfy install --nvidia --version $VERSION
 
 # use version of torch compatible with xformers
-RUN uv pip install xformers torchvision torchaudio --index-url https://download.pytorch.org/whl/$TORCH_CUDA
+# RUN uv pip install xformers torchvision torchaudio --index-url https://download.pytorch.org/whl/$TORCH_CUDA
 
 RUN echo "Using ${TORCH_CUDA}" && \
     uv pip install --upgrade pip wheel setuptools && \
     # uv pip install torch torchvision torchaudio  && \
     # uv pip install -U xformers --force-reinstall --no-cache-dir && \
-    uv pip install torchsde pyhocon==0.3.61 pccm==0.4.16 plotly && \
-    uv pip install spconv-cu120==2.3.6 && \
+    uv pip install xformers pyhocon==0.3.61 pccm==0.4.16 plotly spconv-cu120==2.3.6 && \
     find /app -type d -name '__pycache__' -exec rm -r {} + || true
 
 # ---------- Stage 3a: build individual wheels ----------
@@ -103,7 +115,25 @@ RUN git clone --recursive https://github.com/NVlabs/nvdiffrast.git && \
     python setup.py bdist_wheel && \
     cp dist/*.whl /wheels/
 
-# ---------- Stage 3b: install wheels + nvdiffrast ----------
+RUN printf "scipy==1.16.1\nnumpy<2\n" > /req-constraints.txt
+
+RUN git clone --recursive https://github.com/kijai/ComfyUI-Hunyuan3DWrapper.git && \
+    pip wheel -r ComfyUI-Hunyuan3DWrapper/requirements.txt -c /req-constraints.txt -w /wheels && \
+    pip wheel ./ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/custom_rasterizer -c /req-constraints.txt -w /wheels --no-build-isolation && \
+    pip wheel ./ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/differentiable_renderer -c /req-constraints.txt -w /wheels --no-build-isolation
+
+
+# Keep the original req files for the final stage (no editing/merging)
+
+
+# Install node requirements and local packages
+# RUN uv pip install -r custom_nodes/ComfyUI-Hunyuan3DWrapper/requirements.txt && \
+#     uv pip install -r custom_nodes/ComfyUI-3D-Pack/requirements.txt --no-build-isolation && \
+#     uv pip install ./custom_nodes/ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/custom_rasterizer --no-build-isolation && \
+#     uv pip install ./custom_nodes/ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/differentiable_renderer --no-build-isolation && \
+#     cp -r /app/custom_nodes/* /app/comfy/custom_nodes && rm -rf /app/custom_nodes
+
+# ---------- Stage 3b: install wheels  ----------
 FROM venv-builder AS native-builder
 ENV VIRTUAL_ENV="/app/.venv"
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -122,13 +152,23 @@ COPY ./utils /tmp/utils
 ENV TORCH_EXTENSIONS_DIR=/app/.venv/torch_extensions 
 RUN mkdir -p ${TORCH_EXTENSIONS_DIR}
 
-# Copy and install pre-built wheels
-COPY --from=wheel-builder /wheels/*.whl /tmp/wheels/
-RUN uv pip install --no-cache-dir /tmp/wheels/*.whl
 
-# Clean up
-RUN rm -rf /tmp/wheels && \
-    find /app -type d -name '__pycache__' -exec rm -r {} + || true
+# Copy and install pre-built wheels
+# COPY --from=wheel-builder /wheels/*.whl /tmp/wheels/
+# RUN uv pip install --no-cache-dir /tmp/wheels/*.whl
+
+# # Clean up
+# RUN rm -rf /tmp/wheels && \
+#     find /app -type d -name '__pycache__' -exec rm -r {} + || true
+
+# RUN --mount=from=wheel-builder,source=/wheels,target=/mnt/wheels,ro \
+#     --mount=type=cache,target=/root/.cache/pip \
+#     uv pip install --no-cache-dir /mnt/wheels/*.whl
+RUN --mount=from=wheel-builder,source=/wheels,target=/mnt/wheels,ro \
+    --mount=type=cache,target=/root/.cache/pip \
+    uv pip install --no-index --find-links=/mnt/wheels --only-binary=:all: --no-deps \
+      diff_gaussian_rasterization  pytorch3d torch_scatter nvdiffrast mesh_processor custom_rasterizer nvdiffrast 
+
 
     # ---------- Stage 4: ComfyUI + nodes ----------
 FROM native-builder AS comfy-builder
@@ -138,9 +178,23 @@ ENV CUDA_VERSION_FOR_COMFY=${CUDA_VERSION_FOR_COMFY}
 ENV VERSION=${VERSION}
 ENV VIRTUAL_ENV=/app/.venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgl1 libegl1 \
+    && rm -rf /var/lib/apt/lists/*
+
+
+
+
+
+RUN uv pip install diso "numpy<2" --no-build-isolation 
+
+WORKDIR /tmp
+RUN git clone --recursive https://github.com/MrForExample/ComfyUI-3D-Pack && \
+    uv pip install -r ComfyUI-3D-Pack/requirements.txt --no-build-isolation && \
+    rm -rf ComfyUI-3D-Pack
+
 WORKDIR /app
-
-
 # # Force reinstall of torch
 # RUN echo "Using ${TORCH_CUDA}" && \
 #     uv pip install --upgrade pip wheel setuptools && \
@@ -155,22 +209,16 @@ WORKDIR /app
 # # Add custom nodes (git clones)
 
 
-RUN mkdir -p /app/custom_nodes && cd /app/custom_nodes && \
-    git clone --depth=1 https://github.com/kijai/ComfyUI-Hunyuan3DWrapper.git && \
-    git clone --depth=1 https://github.com/MrForExample/ComfyUI-3D-Pack
 
-# Install node requirements and local packages
-RUN uv pip install -r custom_nodes/ComfyUI-Hunyuan3DWrapper/requirements.txt && \
-    uv pip install -r custom_nodes/ComfyUI-3D-Pack/requirements.txt --no-build-isolation && \
-    uv pip install ./custom_nodes/ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/custom_rasterizer --no-build-isolation && \
-    uv pip install ./custom_nodes/ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/differentiable_renderer --no-build-isolation && \
-    cp -r /app/custom_nodes/* /app/comfy/custom_nodes && rm -rf /app/custom_nodes
 
 # Copy workflows/inputs, scripts
 COPY ./workflows /app/comfy/user/default/workflows
 COPY ./input /app/comfy/input
 COPY ./utils /app/utils
 RUN chmod a+x /app/utils/init.sh
+
+# force reinstall of numpy and fix pytorch compatibility issues
+
 
 WORKDIR /app/comfy
 RUN comfy --skip-prompt --workspace=/app/comfy node install https://github.com/cubiq/ComfyUI_essentials && \
@@ -181,66 +229,66 @@ RUN comfy --skip-prompt --workspace=/app/comfy node install https://github.com/c
     comfy --skip-prompt --workspace=/app/comfy node install https://github.com/rgthree/rgthree-comfy && \
     comfy --skip-prompt --workspace=/app/comfy node install https://github.com/michaelgold/ComfyUI-HF-Model-Downloader && \
     comfy --skip-prompt --workspace=/app/comfy node install https://github.com/Acly/comfyui-inpaint-nodes && \
-    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/lquesada/ComfyUI-Inpaint-CropAndStitch
-
-
-# force reinstall of numpy and fix pytorch compatibility issues
-RUN uv pip install diso "numpy<2" --force-reinstall --no-build-isolation 
-
+    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/lquesada/ComfyUI-Inpaint-CropAndStitch && \
+    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/kijai/ComfyUI-Hunyuan3DWrapper.git && \
+    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/MrForExample/ComfyUI-3D-Pack
 
 
 
 
-# ---------- Stage 5: final runtime ----------
-# FROM nvidia/cuda:12.6.3-cudnn-runtime-ubuntu24.04 AS final
-FROM nvidia/cuda:12.6.3-cudnn-devel-ubuntu24.04 AS final
-
-ENV DEBIAN_FRONTEND=noninteractive \
-    NVIDIA_VISIBLE_DEVICES=all \
-    NVIDIA_DRIVER_CAPABILITIES=compute,utility,graphics \
-    PYOPENGL_PLATFORM=egl \
-    EGL_PLATFORM=surfaceless \
-    PYTHONUNBUFFERED=1 
-
-ENV TORCH_EXTENSIONS_DIR=/app/.venv/torch_extensions 
-
-# COPY --from=comfy-builder /opt/torch_extensions /opt/torch_extensions
-
-# Minimal runtime libs you actually need
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libegl1-mesa-dev libgl1-mesa-dev libglvnd-dev libsm6 libxext6 libxrender1 wget curl \
-    git ca-certificates && rm -rf /var/lib/apt/lists/* && \
-    apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
-
-# Bring in Python runtime and venv
-COPY --from=python-builder /usr/local/bin/python* /usr/local/bin/
-COPY --from=python-builder /usr/local/lib/python3.11 /usr/local/lib/python3.11
-COPY --from=python-builder /usr/local/lib/libpython3.11.so* /usr/local/lib/
-COPY --from=python-builder /usr/local/include/python3.11 /usr/local/include/python3.11
-
-ENV PATH=/usr/local/bin:$PATH
-# Update library cache and add library path for shared Python libraries
-RUN ldconfig
-COPY --from=comfy-builder /app/.venv /app/.venv
-ENV VIRTUAL_ENV=/app/.venv
-ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-ENV NVIDIA_VISIBLE_DEVICES=all
-ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility,graphics
-ENV PYOPENGL_PLATFORM=egl
-ENV FORCE_CUDA="1"
-ENV CUDA_HOME="/usr/local/cuda"
-ENV LD_LIBRARY_PATH="/usr/local/lib:/usr/lib/x86_64-linux-gnu:/usr/local/cuda/lib64:/usr/local/cuda/targets/x86_64-linux/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-ENV PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True,garbage_collection_threshold:0.6,max_split_size_mb:128"
-ENV TORCH_CUDA_ARCH_LIST="6.1;7.0;7.5;8.0;8.6;8.9;9.0"
-ARG TORCH_CUDA=cu126
-ENV TORCH_CUDA=${TORCH_CUDA}
 
 
-# Bring in ComfyUI workspace (and, if desired, models)
-COPY --from=comfy-builder /app/comfy /app/comfy
-COPY --from=comfy-builder /app/utils /app/utils
+
+# # ---------- Stage 5: final runtime ----------
+# # FROM nvidia/cuda:12.6.3-cudnn-runtime-ubuntu24.04 AS final
+# FROM nvidia/cuda:12.6.3-cudnn-devel-ubuntu24.04 AS final
+
+# ENV DEBIAN_FRONTEND=noninteractive \
+#     NVIDIA_VISIBLE_DEVICES=all \
+#     NVIDIA_DRIVER_CAPABILITIES=compute,utility,graphics \
+#     PYOPENGL_PLATFORM=egl \
+#     EGL_PLATFORM=surfaceless \
+#     PYTHONUNBUFFERED=1 
+
+# ENV TORCH_EXTENSIONS_DIR=/app/.venv/torch_extensions 
+
+# # COPY --from=comfy-builder /opt/torch_extensions /opt/torch_extensions
+
+# # Minimal runtime libs you actually need
+# RUN apt-get update && apt-get install -y --no-install-recommends \
+#     libegl1-mesa-dev libgl1-mesa-dev libglvnd-dev libsm6 libxext6 libxrender1 wget curl \
+#     git ca-certificates && rm -rf /var/lib/apt/lists/* && \
+#     apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
+
+# # Bring in Python runtime and venv
+# COPY --from=python-builder /usr/local/bin/python* /usr/local/bin/
+# COPY --from=python-builder /usr/local/lib/python3.11 /usr/local/lib/python3.11
+# COPY --from=python-builder /usr/local/lib/libpython3.11.so* /usr/local/lib/
+# COPY --from=python-builder /usr/local/include/python3.11 /usr/local/include/python3.11
+
+# ENV PATH=/usr/local/bin:$PATH
+# # Update library cache and add library path for shared Python libraries
+# RUN ldconfig
+# COPY --from=comfy-builder /app/.venv /app/.venv
+# ENV VIRTUAL_ENV=/app/.venv
+# ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+# ENV PYTHONDONTWRITEBYTECODE=1
+# ENV PYTHONUNBUFFERED=1
+# ENV NVIDIA_VISIBLE_DEVICES=all
+# ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility,graphics
+# ENV PYOPENGL_PLATFORM=egl
+# ENV FORCE_CUDA="1"
+# ENV CUDA_HOME="/usr/local/cuda"
+# ENV LD_LIBRARY_PATH="/usr/local/lib:/usr/lib/x86_64-linux-gnu:/usr/local/cuda/lib64:/usr/local/cuda/targets/x86_64-linux/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+# ENV PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True,garbage_collection_threshold:0.6,max_split_size_mb:128"
+# ENV TORCH_CUDA_ARCH_LIST="6.1;7.0;7.5;8.0;8.6;8.9;9.0"
+# ARG TORCH_CUDA=cu126
+# ENV TORCH_CUDA=${TORCH_CUDA}
+
+
+# # Bring in ComfyUI workspace (and, if desired, models)
+# COPY --from=comfy-builder /app/comfy /app/comfy
+# COPY --from=comfy-builder /app/utils /app/utils
 # Or: COPY --from=downloader /app/comfy/models /app/comfy/# after you copy the venv and workspace
 # COPY --from=comfy-builder /root/.cache/torch_extensions /root/.cache/torch_extensions
 
