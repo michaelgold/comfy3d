@@ -186,10 +186,12 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 RUN uv pip install diso "numpy<2" --no-build-isolation 
 
-WORKDIR /tmp
-RUN git clone --recursive https://github.com/MrForExample/ComfyUI-3D-Pack && \
-    uv pip install -r ComfyUI-3D-Pack/requirements.txt --no-build-isolation && \
-    rm -rf ComfyUI-3D-Pack
+WORKDIR /app/custom_nodes
+RUN git clone --depth 1 --branch v0.1.6 --recursive https://github.com/MrForExample/ComfyUI-3D-Pack && \
+    cd ComfyUI-3D-Pack && \
+    git checkout -b local && \
+    cd .. && \
+    uv pip install -r ComfyUI-3D-Pack/requirements.txt --no-build-isolation 
 
 WORKDIR /app
 # # Force reinstall of torch
@@ -282,21 +284,19 @@ ENV TORCH_CUDA=${TORCH_CUDA}
 
 
 WORKDIR /app/comfy
-RUN comfy --skip-prompt --workspace=/app/comfy node install https://github.com/cubiq/ComfyUI_essentials && \
-    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/kijai/ComfyUI-KJNodes && \
-    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite && \
-    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/kijai/ComfyUI-DepthAnythingV2 && \
-    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/kijai/ComfyUI-WanVideoWrapper && \
-    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/rgthree/rgthree-comfy && \
-    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/michaelgold/ComfyUI-HF-Model-Downloader && \
-    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/Acly/comfyui-inpaint-nodes && \
-    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/lquesada/ComfyUI-Inpaint-CropAndStitch && \
-    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/kijai/ComfyUI-Hunyuan3DWrapper.git && \
-    comfy --skip-prompt --workspace=/app/comfy node install https://github.com/MrForExample/ComfyUI-3D-Pack
+RUN comfy --skip-prompt --workspace=/app/comfy node registry-install comfyui-kjnodes  --version 1.1.3 && \
+    comfy --skip-prompt --workspace=/app/comfy node registry-install comfyui-videohelpersuite --version 1.7.4 && \
+    comfy --skip-prompt --workspace=/app/comfy node registry-install comfyui-depthanythingv2 --version 1.0.1 && \
+    comfy --skip-prompt --workspace=/app/comfy node registry-install ComfyUI-WanVideoWrapper --version 1.2.8 && \
+    comfy --skip-prompt --workspace=/app/comfy node registry-install rgthree-comfy --version 1.0.2508012353 && \
+    comfy --skip-prompt --workspace=/app/comfy node registry-install hf-model-downloader --version 0.2.5 && \
+    comfy --skip-prompt --workspace=/app/comfy node registry-install comfyui-inpaint-nodes --version 1.0.4  && \
+    comfy --skip-prompt --workspace=/app/comfy node registry-install comfyui-inpaint-cropandstitch --version 2.1.7 && \
+    comfy --skip-prompt --workspace=/app/comfy node registry-install comfyui-hunyuan3dwrapper --version 1.0.6 && \ 
+    comfy --skip-prompt --workspace=/app/comfy node registry-install comfyui-manager --version 3.36 
 
-
-
-
+RUN WORKDIR /app/comfy/custom_nodes/ComfyUI-Hunyuan3DWrapper && \
+    git config --global user.email "
 
 # Set workspace and install nodes with non-interactive flags
 WORKDIR /app/comfy
