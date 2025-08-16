@@ -147,7 +147,6 @@ ENV LD_LIBRARY_PATH="/usr/local/lib:/usr/lib/x86_64-linux-gnu:/usr/local/cuda/li
 ENV PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True,garbage_collection_threshold:0.6,max_split_size_mb:128"
 ENV TORCH_CUDA_ARCH_LIST="6.1;7.0;7.5;8.0;8.6;8.9;9.0"
 
-COPY ./utils /tmp/utils
 
 ENV TORCH_EXTENSIONS_DIR=/app/.venv/torch_extensions 
 RUN mkdir -p ${TORCH_EXTENSIONS_DIR}
@@ -179,19 +178,20 @@ ENV VERSION=${VERSION}
 ENV VIRTUAL_ENV=/app/.venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
+# use the constraints in /app/constraints
+COPY ./constraints.txt /app/constraints.txt
+ENV UV_CONSTRAINT=/app/constraints.txt
+ENV PIP_CONSTRAINT=/app/constraints.txt
 
 
+RUN uv pip install diso --no-build-isolation 
 
-
-
-RUN uv pip install diso "numpy<2" --no-build-isolation 
-
-WORKDIR /app/custom_nodes
-RUN git clone --depth 1 --branch v0.1.6 --recursive https://github.com/MrForExample/ComfyUI-3D-Pack && \
-    cd ComfyUI-3D-Pack && \
-    git checkout -b local && \
-    cd .. && \
-    uv pip install -r ComfyUI-3D-Pack/requirements.txt --no-build-isolation 
+# WORKDIR /app/custom_nodes
+# RUN git clone --depth 1 --branch v0.1.6 --recursive https://github.com/MrForExample/ComfyUI-3D-Pack && \
+#     cd ComfyUI-3D-Pack && \
+#     git checkout -b local && \
+#     cd .. && \
+#     uv pip install -r ComfyUI-3D-Pack/requirements.txt --no-build-isolation 
 
 WORKDIR /app
 # # Force reinstall of torch
@@ -255,6 +255,13 @@ COPY --from=python-builder /usr/local/include/python3.11 /usr/local/include/pyth
 # copy app directory from comfy-builder
 COPY --from=comfy-builder /app /app
 
+
+COPY ./constraints.txt /app/constraints.txt
+ENV UV_CONSTRAINT=/app/constraints.txt
+ENV PIP_CONSTRAINT=/app/constraints.txt
+
+
+
 ENV PATH=/usr/local/bin:$PATH
 # Update library cache and add library path for shared Python libraries
 RUN ldconfig
@@ -280,20 +287,30 @@ ENV TORCH_CUDA=${TORCH_CUDA}
 # Or: COPY --from=downloader /app/comfy/models /app/comfy/# after you copy the venv and workspace
 # COPY --from=comfy-builder /root/.cache/torch_extensions /root/.cache/torch_extensions
 
-
+COPY ./utils /app/utils 
 
 
 WORKDIR /app/comfy
-RUN comfy --skip-prompt --workspace=/app/comfy node registry-install comfyui-kjnodes  --version 1.1.3 && \
-    comfy --skip-prompt --workspace=/app/comfy node registry-install comfyui-videohelpersuite --version 1.7.4 && \
-    comfy --skip-prompt --workspace=/app/comfy node registry-install comfyui-depthanythingv2 --version 1.0.1 && \
-    comfy --skip-prompt --workspace=/app/comfy node registry-install ComfyUI-WanVideoWrapper --version 1.2.8 && \
-    comfy --skip-prompt --workspace=/app/comfy node registry-install rgthree-comfy --version 1.0.2508012353 && \
-    comfy --skip-prompt --workspace=/app/comfy node registry-install hf-model-downloader --version 0.2.5 && \
-    comfy --skip-prompt --workspace=/app/comfy node registry-install comfyui-inpaint-nodes --version 1.0.4  && \
-    comfy --skip-prompt --workspace=/app/comfy node registry-install comfyui-inpaint-cropandstitch --version 2.1.7 && \
-    comfy --skip-prompt --workspace=/app/comfy node registry-install comfyui-hunyuan3dwrapper --version 1.0.6 && \ 
-    comfy --skip-prompt --workspace=/app/comfy node registry-install comfyui-manager --version 3.36 
+
+RUN python /app/utils/node_install.py  https://github.com/rgthree/rgthree-comfy --version c5ffa43de4ddb17244626a65a30700a05dd6b67d 
+
+RUN python /app/utils/node_install.py https://github.com/kijai/ComfyUI-KJNodes --version 9ea455afd61cc3814bbf8deb5e7e387336872466
+
+RUN python /app/utils/node_install.py https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite --version 8e4d79471bf1952154768e8435a9300077b534fa
+
+RUN python /app/utils/node_install.py https://github.com/kijai/ComfyUI-DepthAnythingV2 --version 047a4ecfd09a951944154c7f3e823566e586c2d5
+
+RUN python /app/utils/node_install.py https://github.com/kijai/ComfyUI-WanVideoWrapper --version 2c854c53ee8c078069d9b95bf493bb44b25039ee
+
+RUN python /app/utils/node_install.py https://github.com/Acly/comfyui-inpaint-nodes --version b9039c22de926919f26b7242cfa4da00d8b6fbec
+
+RUN python /app/utils/node_install.py https://github.com/michaelgold/ComfyUI-HF-Model-Downloader --version 7165521d98a919a94c87395e3e5845f1c2700f37
+
+RUN python /app/utils/node_install.py https://github.com/lquesada/ComfyUI-Inpaint-CropAndStitch --version b432b2411cbb7d3192d35953bd3aafea05a0e245
+
+RUN python /app/utils/node_install.py https://github.com/MrForExample/ComfyUI-3D-Pack --version 7c7ac2429fb3e9d902372ef45c76040340939d8b --no-build-isolation
+
+RUN python /app/utils/node_install.py https://github.com/kijai/ComfyUI-Hunyuan3DWrapper --version 4a87c71089c5d5175035bc6f0de2a586d1fd2a08 
 
 # Set workspace and install nodes with non-interactive flags
 WORKDIR /app/comfy
@@ -302,7 +319,7 @@ RUN comfy --skip-prompt --workspace=/app/comfy tracking disable
 # Copy workflows/inputs, scripts
 COPY ./workflows /app/comfy/user/default/workflows
 COPY ./input /app/comfy/input
-COPY ./utils /app/utils
+
 RUN chmod a+x /app/utils/init.sh
 
 EXPOSE 8188
