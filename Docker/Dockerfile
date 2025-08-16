@@ -295,9 +295,6 @@ RUN comfy --skip-prompt --workspace=/app/comfy node registry-install comfyui-kjn
     comfy --skip-prompt --workspace=/app/comfy node registry-install comfyui-hunyuan3dwrapper --version 1.0.6 && \ 
     comfy --skip-prompt --workspace=/app/comfy node registry-install comfyui-manager --version 3.36 
 
-RUN WORKDIR /app/comfy/custom_nodes/ComfyUI-Hunyuan3DWrapper && \
-    git config --global user.email "
-
 # Set workspace and install nodes with non-interactive flags
 WORKDIR /app/comfy
 RUN comfy --skip-prompt --workspace=/app/comfy tracking disable
