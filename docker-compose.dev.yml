@@ -18,7 +18,6 @@ services:
       - ./output:/app/comfy/output:cached
       - ./workflows:/app/comfy/user/default/workflows:cached
       - ./input:/app/comfy/input:cached
-      - comfyui-nodes:/app/comfy/custom_nodes
       - comfyui-models:/app/comfy/models
       - comfyui-manager:/app/comfy/user/default/ComfyUI-Manager
       - comfyui-u2net:/root/.u2net
