@@ -308,7 +308,7 @@ RUN python /app/utils/node_install.py https://github.com/michaelgold/ComfyUI-HF-
 
 RUN python /app/utils/node_install.py https://github.com/lquesada/ComfyUI-Inpaint-CropAndStitch --version b432b2411cbb7d3192d35953bd3aafea05a0e245
 
-RUN python /app/utils/node_install.py https://github.com/MrForExample/ComfyUI-3D-Pack --version 7c7ac2429fb3e9d902372ef45c76040340939d8b --no-build-isolation
+RUN python /app/utils/node_install.py https://github.com/MrForExample/ComfyUI-3D-Pack --version 9ab02eb440b98cf7dea0c2de9379f45d99d160d5 --no-build-isolation
 
 RUN python /app/utils/node_install.py https://github.com/kijai/ComfyUI-Hunyuan3DWrapper --version 4a87c71089c5d5175035bc6f0de2a586d1fd2a08 
 
