@@ -310,7 +310,8 @@ RUN python /app/utils/node_install.py https://github.com/lquesada/ComfyUI-Inpain
 
 RUN python /app/utils/node_install.py https://github.com/MrForExample/ComfyUI-3D-Pack --version 9ab02eb440b98cf7dea0c2de9379f45d99d160d5 --no-build-isolation
 
-RUN python /app/utils/node_install.py https://github.com/kijai/ComfyUI-Hunyuan3DWrapper --version 4a87c71089c5d5175035bc6f0de2a586d1fd2a08 
+RUN python /app/utils/node_install.py https://github.com/cubiq/ComfyUI_essentials --version cb5c69c5715230ff6cc1402ddbb5a59473e23202 
+
 
 # Set workspace and install nodes with non-interactive flags
 WORKDIR /app/comfy
