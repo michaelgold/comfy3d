@@ -31,7 +31,10 @@ You can easily spin up instances of this Docker container on Runpod
   - [ControlNet Extensions](https://github.com/cubiq/ComfyUI_essentials)
 - 🧠 **Included Models**:
   - Tencent's `Hunyuan3D-2` (`hy3dgen`)
-  - FLUX for stylized 3D character generation
+  - Flux Dev and Flux Kontext
+  - Wan 2.2 (Video)
+  - QWEN Image and QWEN Image Edit
+  - Comfy 3D Pack 
 - 🧪 Ready-to-use **workflows** for:
   - Character generation (`characeter_flux.json`)
   - 3D mesh reconstruction (`hy3d.json`)
