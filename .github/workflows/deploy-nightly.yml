@@ -60,7 +60,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Push to Docker Hub
         run: |
-          docker push michaelgold/comfy3d:nightly-${{ matrix.cuda.tag_suffix }}
+          docker push michaelgold/comfy3d:nightly
           if [ "${{ matrix.cuda.latest }}" = "true" ]; then
             docker tag michaelgold/comfy3d:nightly michaelgold/comfy3d:nightly
             docker push michaelgold/comfy3d:nightly
