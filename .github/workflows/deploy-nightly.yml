@@ -21,6 +21,7 @@ jobs:
       - name: Build Docker image
         run: |
           docker build \
+            --no-cache \
             --build-arg VERSION=${{ env.VERSION }} \
             --build-arg BASE_IMAGE=${{ matrix.cuda.base_image }} \
             --build-arg TORCH_CUDA=${{ matrix.cuda.torch_cuda }} \
