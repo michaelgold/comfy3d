@@ -68,18 +68,18 @@ docker compose up -d
 The app runs at http://localhost:8188
 
 #### 🧬 Structure
-
-├── Docker/                # Dockerfile and build logic
-├── .devcontainer/         # VS Code container dev config
-├── workflows/             # JSON workflows for ComfyUI
-├── input/                 # Sample input images
-├── output/                # Output directory (mounted)
+```pre
+├── Docker/                   # Dockerfile and build logic
+├── .devcontainer/            # VS Code container dev config
+├── workflows/                # JSON workflows for ComfyUI
+├── input/                    # Sample input images
+├── output/                   # Output directory (mounted)
 ├── utils/
-│   ├── init.sh            # Container entrypoint
-│   ├── model_downloader.py
-│   └── model_config.json  # Model download config
-├── docker-compose.yml     # Production stack
-├── docker-compose.dev.yml # Development stack
+│   └── init.sh               # Container entrypoint
+├── docker-compose.yml        # Production stack
+├── docker-compose.dev.yml    # Development stack
+└── docker-compose.studio.yml # Studio workstation stack
+```
 
 #### 🧠 Models
 The following models can be downloaded at runtime with the included [ComfyUI-HF-Model-Downloader](https://github.com/michaelgold/ComfyUI-HF-Model-Downloader) addon:
