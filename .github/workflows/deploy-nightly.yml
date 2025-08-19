@@ -61,7 +61,3 @@ jobs:
       - name: Push to Docker Hub
         run: |
           docker push michaelgold/comfy3d:nightly
-          if [ "${{ matrix.cuda.latest }}" = "true" ]; then
-            docker tag michaelgold/comfy3d:nightly michaelgold/comfy3d:nightly
-            docker push michaelgold/comfy3d:nightly
-          fi
