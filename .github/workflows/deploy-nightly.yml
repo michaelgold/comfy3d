@@ -25,13 +25,13 @@ jobs:
             --build-arg VERSION=${{ env.VERSION }} \
             --build-arg BASE_IMAGE=${{ matrix.cuda.base_image }} \
             --build-arg TORCH_CUDA=${{ matrix.cuda.torch_cuda }} \
-            -t michaelgold/comfy3d:nightly-${{ matrix.cuda.tag_suffix }} \
+            -t michaelgold/comfy3d:nightly \
             -f Docker/Dockerfile.nightly .
       - name: Test container
         run: |
           # Remove existing container if it exists
           docker rm -f comfy-test || true
-          docker run -d -p 8234:8188 --name comfy-test --gpus all michaelgold/comfy3d:nightly-${{ matrix.cuda.tag_suffix }}
+          docker run -d -p 8234:8188 --name comfy-test --gpus all michaelgold/comfy3d:nightly
           sleep 150
           docker logs comfy-test > logs.txt
           cat logs.txt
