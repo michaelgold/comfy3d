@@ -6,8 +6,17 @@ This setup provides out-of-the-box workflows for generating character sheets, te
 
 Docker containers are deployed to [https://hub.docker.com/r/michaelgold/comfy3d](https://hub.docker.com/r/michaelgold/comfy3d)
 
-<a target="_blank" href="https://lightning.ai/gold/studios/comfy3d">
-  <img src="https://pl-bolts-doc-images.s3.us-east-2.amazonaws.com/app-2/studio-badge.svg" alt="Open In Studio"/>
+---
+## Running
+
+You can easily spin up instances of this Docker container on Runpod
+
+<a href="https://console.runpod.io/deploy?template=j75puttb7q&ref=74ihrngg" target="_blank" rel="noopener">
+  <img alt="Deploy on Runpod" src="https://img.shields.io/badge/Deploy%20on%20Runpod-stable-0A0A0A?style=for-the-badge">
+</a>
+
+<a href="https://console.runpod.io/deploy?template=0qedwpn0gt&ref=74ihrngg" target="_blank" rel="noopener">
+  <img alt="Deploy on Runpod" src="https://img.shields.io/badge/Deploy%20on%20Runpod-nightly-0A0A0A?style=for-the-badge">
 </a>
 
 ---
