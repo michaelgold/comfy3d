@@ -1,0 +1,66 @@
+---
+name: Build and Deploy Nightly Docker Image
+on:
+  schedule:
+    - cron: '0 22 * * *'  # Every night at 10pm UTC
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    strategy:
+      matrix:
+        cuda:
+          - base_image: nvidia/cuda:12.6.3-cudnn-devel-ubuntu24.04
+            torch_cuda: cu126
+            tag_suffix: cuda12.6
+    runs-on: self-hosted
+    timeout-minutes: 120
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Build Docker image
+        run: |
+          docker build \
+            --build-arg VERSION=${{ env.VERSION }} \
+            --build-arg BASE_IMAGE=${{ matrix.cuda.base_image }} \
+            --build-arg TORCH_CUDA=${{ matrix.cuda.torch_cuda }} \
+            -t michaelgold/comfy3d:nightly-${{ matrix.cuda.tag_suffix }} \
+            -f Docker/Dockerfile.nightly .
+      - name: Test container
+        run: |
+          # Remove existing container if it exists
+          docker rm -f comfy-test || true
+          docker run -d -p 8234:8188 --name comfy-test --gpus all michaelgold/comfy3d:nightly-${{ matrix.cuda.tag_suffix }}
+          sleep 150
+          docker logs comfy-test > logs.txt
+          cat logs.txt
+          if grep -q "0.0.0.0" logs.txt; then
+            echo "✅ ComfyUI server started"
+          else
+            echo "❌ ComfyUI server did not start" && exit 1
+          fi
+          docker stop comfy-test
+          docker rm comfy-test
+
+  push:
+    needs: build-and-test
+    runs-on: self-hosted
+    timeout-minutes: 60
+    strategy:
+      matrix:
+        cuda:
+          - tag_suffix: cuda12.6
+            latest: true
+    steps:
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Push to Docker Hub
+        run: |
+          docker push michaelgold/comfy3d:nightly-${{ matrix.cuda.tag_suffix }}
+          if [ "${{ matrix.cuda.latest }}" = "true" ]; then
+            docker tag michaelgold/comfy3d:nightly-${{ matrix.cuda.tag_suffix }} michaelgold/comfy3d:nightly
+            docker push michaelgold/comfy3d:nightly
+          fi

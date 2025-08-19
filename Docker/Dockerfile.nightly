@@ -1,0 +1,7 @@
+FROM michaelgold/comfy3d:latest AS comfy3d
+
+WORKDIR /app/comfy
+RUN git checkout master && git pull
+
+EXPOSE 8188
+ENTRYPOINT ["/app/utils/init.sh"]
