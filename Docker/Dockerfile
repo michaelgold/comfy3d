@@ -66,7 +66,7 @@ RUN uv pip install comfy-cli && \
 
 RUN echo "Using ${TORCH_CUDA}" && \
     uv pip install --upgrade pip wheel setuptools && \
-    uv pip install xformers pyhocon==0.3.61 pccm==0.4.16 plotly spconv-cu120==2.3.6 && \
+    uv pip install xformers pyhocon==0.3.61 pccm==0.4.16 plotly spconv-cu126==2.3.8 && \
     find /app -type d -name '__pycache__' -exec rm -r {} + || true
 
 # ---------- Stage 3a: build individual wheels ----------
@@ -117,6 +117,16 @@ RUN git clone --recursive https://github.com/kijai/ComfyUI-Hunyuan3DWrapper.git 
     pip wheel -r ComfyUI-Hunyuan3DWrapper/requirements.txt -c /req-constraints.txt -w /wheels && \
     pip wheel ./ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/custom_rasterizer -c /req-constraints.txt -w /wheels --no-build-isolation && \
     pip wheel ./ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/differentiable_renderer -c /req-constraints.txt -w /wheels --no-build-isolation
+
+# RUN git clone https://github.com/FindDefinition/cumm && \
+#     cd cumm && \
+#     uv pip install -r requirements.txt --no-build-isolation
+
+# ENV SPCONV_DISABLE_JIT="1"
+
+# RUN git clone https://github.com/traveller59/spconv && \
+#     uv pip install pccm cumm && \
+#     pip wheel ./spconv -w /wheels --no-build-isolation
 
 # ---------- Stage 3b: install wheels  ----------
 FROM venv-builder AS native-builder
@@ -241,6 +251,7 @@ COPY ./workflows /app/comfy/user/default/workflows
 COPY ./input /app/comfy/input
 
 RUN chmod a+x /app/utils/init.sh
+
 
 EXPOSE 8188
 ENTRYPOINT ["/app/utils/init.sh"]
