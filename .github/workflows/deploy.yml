@@ -26,6 +26,7 @@ jobs:
       base_version: ${{ steps.check.outputs.base_version }}
       update_version: ${{ steps.check.outputs.update_version }}
       version_to_use: ${{ steps.set_version.outputs.version_to_use }}
+      final_update_version: ${{ steps.set_version.outputs.final_update_version }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -47,6 +48,20 @@ jobs:
             echo "version_to_use=v0.3.50" >> $GITHUB_OUTPUT
             echo "Using fallback version: v0.3.50"
           fi
+          
+          # Ensure update_version is never empty
+          UPDATE_VER="${{ github.event.inputs.version }}"
+          if [[ -z "$UPDATE_VER" ]]; then
+            UPDATE_VER="${{ steps.check.outputs.latest_tag }}"
+          fi
+          if [[ -z "$UPDATE_VER" ]]; then
+            UPDATE_VER="${{ steps.check.outputs.base_version }}"
+          fi
+          if [[ -z "$UPDATE_VER" ]]; then
+            UPDATE_VER="v0.3.50"
+          fi
+          echo "final_update_version=$UPDATE_VER" >> $GITHUB_OUTPUT
+          echo "Final update version will be: $UPDATE_VER"
 
   build-and-test:
     needs: check-comfyui-version
@@ -66,16 +81,16 @@ jobs:
         run: |
           docker build \
             --build-arg VERSION=${{ needs.check-comfyui-version.outputs.version_to_use }} \
-            --build-arg UPDATE_VERSION=${{ needs.check-comfyui-version.outputs.update_version }} \
+            --build-arg UPDATE_VERSION=${{ needs.check-comfyui-version.outputs.final_update_version }} \
             --build-arg BASE_IMAGE=${{ matrix.cuda.base_image }} \
             --build-arg TORCH_CUDA=${{ matrix.cuda.torch_cuda }} \
-            -t michaelgold/comfy3d:${{ needs.check-comfyui-version.outputs.update_version }}-${{ matrix.cuda.tag_suffix }} \
+            -t michaelgold/comfy3d:${{ needs.check-comfyui-version.outputs.final_update_version }}-${{ matrix.cuda.tag_suffix }} \
             -f Docker/Dockerfile .
       - name: Test container
         run: |
           # Remove existing container if it exists
           docker rm -f comfy-test || true
-          docker run -d -p 8234:8188 --name comfy-test --gpus all michaelgold/comfy3d:${{ needs.check-comfyui-version.outputs.update_version }}-${{ matrix.cuda.tag_suffix }}
+          docker run -d -p 8234:8188 --name comfy-test --gpus all michaelgold/comfy3d:${{ needs.check-comfyui-version.outputs.final_update_version }}-${{ matrix.cuda.tag_suffix }}
           sleep 150
           docker logs comfy-test > logs.txt
           cat logs.txt
@@ -105,9 +120,9 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Push to Docker Hub
         run: |
-          docker push michaelgold/comfy3d:${{ needs.check-comfyui-version.outputs.update_version }}-${{ matrix.cuda.tag_suffix }}
+          docker push michaelgold/comfy3d:${{ needs.check-comfyui-version.outputs.final_update_version }}-${{ matrix.cuda.tag_suffix }}
           if [ "${{ matrix.cuda.latest }}" = "true" ]; then
-            docker tag michaelgold/comfy3d:${{ needs.check-comfyui-version.outputs.update_version }}-${{ matrix.cuda.tag_suffix }} michaelgold/comfy3d:latest
+            docker tag michaelgold/comfy3d:${{ needs.check-comfyui-version.outputs.final_update_version }}-${{ matrix.cuda.tag_suffix }} michaelgold/comfy3d:latest
             docker push michaelgold/comfy3d:latest
           fi
 
