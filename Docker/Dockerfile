@@ -220,6 +220,11 @@ ENV TORCH_CUDA_ARCH_LIST="6.1;7.0;7.5;8.0;8.6;8.9;9.0"
 ARG TORCH_CUDA=cu126
 ENV TORCH_CUDA=${TORCH_CUDA}
 
+# Version arguments for ComfyUI
+ARG VERSION=v0.3.50
+ARG UPDATE_VERSION=v0.3.51
+ENV VERSION=${VERSION}
+ENV UPDATE_VERSION=${UPDATE_VERSION}
 
 COPY ./utils /app/utils 
 
@@ -255,6 +260,17 @@ RUN comfy --skip-prompt --workspace=/app/comfy tracking disable
 # Copy workflows/inputs, scripts
 COPY ./workflows /app/comfy/user/default/workflows
 COPY ./input /app/comfy/input
+
+# Update ComfyUI to latest version if different from base
+RUN if [ "$VERSION" != "$UPDATE_VERSION" ] && [ -n "$UPDATE_VERSION" ]; then \
+        echo "Updating ComfyUI from $VERSION to $UPDATE_VERSION"; \
+        cd /app/comfy && \
+        git fetch origin && \
+        git checkout $UPDATE_VERSION && \
+        uv pip install -r requirements.txt; \
+    else \
+        echo "No update needed, VERSION=$VERSION UPDATE_VERSION=$UPDATE_VERSION"; \
+    fi
 
 RUN chmod a+x /app/utils/init.sh
 

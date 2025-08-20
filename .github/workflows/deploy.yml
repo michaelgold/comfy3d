@@ -23,6 +23,8 @@ jobs:
       new_tag: ${{ steps.check.outputs.new_tag }}
       new_commit: ${{ steps.check.outputs.new_commit }}
       latest_tag: ${{ steps.check.outputs.latest_tag }}
+      base_version: ${{ steps.check.outputs.base_version }}
+      update_version: ${{ steps.check.outputs.update_version }}
       version_to_use: ${{ steps.set_version.outputs.version_to_use }}
     steps:
       - name: Checkout repository
@@ -38,13 +40,9 @@ jobs:
           if [[ "${{ github.event.inputs.version }}" != '' ]]; then
             echo "version_to_use=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
             echo "Using manually specified version: ${{ github.event.inputs.version }}"
-          elif [[ "${{ steps.check.outputs.latest_tag }}" != '' ]]; then
-            echo "version_to_use=${{ steps.check.outputs.latest_tag }}" >> $GITHUB_OUTPUT
-            echo "Using latest detected version: ${{ steps.check.outputs.latest_tag }}"
-          elif [[ -f "utils/comfyui_version_info.json" ]]; then
-            STORED_VERSION=$(python -c "import json; print(json.load(open('utils/comfyui_version_info.json'))['previous_tag'])")
-            echo "version_to_use=$STORED_VERSION" >> $GITHUB_OUTPUT
-            echo "Using stored version: $STORED_VERSION"
+          elif [[ "${{ steps.check.outputs.base_version }}" != '' ]]; then
+            echo "version_to_use=${{ steps.check.outputs.base_version }}" >> $GITHUB_OUTPUT
+            echo "Using base version for build: ${{ steps.check.outputs.base_version }}"
           else
             echo "version_to_use=v0.3.50" >> $GITHUB_OUTPUT
             echo "Using fallback version: v0.3.50"
@@ -68,15 +66,16 @@ jobs:
         run: |
           docker build \
             --build-arg VERSION=${{ needs.check-comfyui-version.outputs.version_to_use }} \
+            --build-arg UPDATE_VERSION=${{ needs.check-comfyui-version.outputs.update_version }} \
             --build-arg BASE_IMAGE=${{ matrix.cuda.base_image }} \
             --build-arg TORCH_CUDA=${{ matrix.cuda.torch_cuda }} \
-            -t michaelgold/comfy3d:${{ needs.check-comfyui-version.outputs.version_to_use }}-${{ matrix.cuda.tag_suffix }} \
+            -t michaelgold/comfy3d:${{ needs.check-comfyui-version.outputs.update_version }}-${{ matrix.cuda.tag_suffix }} \
             -f Docker/Dockerfile .
       - name: Test container
         run: |
           # Remove existing container if it exists
           docker rm -f comfy-test || true
-          docker run -d -p 8234:8188 --name comfy-test --gpus all michaelgold/comfy3d:${{ needs.check-comfyui-version.outputs.version_to_use }}-${{ matrix.cuda.tag_suffix }}
+          docker run -d -p 8234:8188 --name comfy-test --gpus all michaelgold/comfy3d:${{ needs.check-comfyui-version.outputs.update_version }}-${{ matrix.cuda.tag_suffix }}
           sleep 150
           docker logs comfy-test > logs.txt
           cat logs.txt
@@ -106,9 +105,9 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Push to Docker Hub
         run: |
-          docker push michaelgold/comfy3d:${{ needs.check-comfyui-version.outputs.version_to_use }}-${{ matrix.cuda.tag_suffix }}
+          docker push michaelgold/comfy3d:${{ needs.check-comfyui-version.outputs.update_version }}-${{ matrix.cuda.tag_suffix }}
           if [ "${{ matrix.cuda.latest }}" = "true" ]; then
-            docker tag michaelgold/comfy3d:${{ needs.check-comfyui-version.outputs.version_to_use }}-${{ matrix.cuda.tag_suffix }} michaelgold/comfy3d:latest
+            docker tag michaelgold/comfy3d:${{ needs.check-comfyui-version.outputs.update_version }}-${{ matrix.cuda.tag_suffix }} michaelgold/comfy3d:latest
             docker push michaelgold/comfy3d:latest
           fi
 
