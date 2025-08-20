@@ -23,7 +23,7 @@ def write_version_info(file_path, tag, commit):
         json.dump({"previous_tag": tag, "previous_commit": commit}, file)
 
 def main():
-    file_path = 'comfyui_version_info.json'
+    file_path = 'utils/comfyui_version_info.json'
     version_info = read_version_info(file_path)
 
     latest_tag = get_latest_tag()

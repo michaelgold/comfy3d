@@ -38,6 +38,9 @@ jobs:
           if [[ "${{ github.event.inputs.version }}" != '' ]]; then
             echo "version_to_use=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
             echo "Using manually specified version: ${{ github.event.inputs.version }}"
+          elif [[ "${{ steps.check.outputs.latest_tag }}" != '' ]]; then
+            echo "version_to_use=${{ steps.check.outputs.latest_tag }}" >> $GITHUB_OUTPUT
+            echo "Using latest detected version: ${{ steps.check.outputs.latest_tag }}"
           elif [[ -f "utils/comfyui_version_info.json" ]]; then
             STORED_VERSION=$(python -c "import json; print(json.load(open('utils/comfyui_version_info.json'))['previous_tag'])")
             echo "version_to_use=$STORED_VERSION" >> $GITHUB_OUTPUT
@@ -129,4 +132,4 @@ jobs:
         with:
           default_author: github_actions
           message: 'Update ComfyUI version info with latest tag and commit'
-          add: 'comfyui_version_info.json'
+          add: 'utils/comfyui_version_info.json'
