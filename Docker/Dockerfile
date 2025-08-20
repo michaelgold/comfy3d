@@ -266,7 +266,7 @@ RUN if [ "$VERSION" != "$UPDATE_VERSION" ] && [ -n "$UPDATE_VERSION" ]; then \
         echo "Updating ComfyUI from $VERSION to $UPDATE_VERSION"; \
         cd /app/comfy && \
         git fetch origin && \
-        git checkout $UPDATE_VERSION && \
+        git checkout -b "${UPDATE_VERSION}" $UPDATE_VERSION && \
         uv pip install -r requirements.txt; \
     else \
         echo "No update needed, VERSION=$VERSION UPDATE_VERSION=$UPDATE_VERSION"; \
