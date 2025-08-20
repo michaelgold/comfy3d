@@ -66,7 +66,7 @@ RUN uv pip install comfy-cli && \
 
 RUN echo "Using ${TORCH_CUDA}" && \
     uv pip install --upgrade pip wheel setuptools && \
-    uv pip install xformers pyhocon==0.3.61 pccm==0.4.16 plotly spconv-cu126==2.3.8 && \
+    # uv pip install xformers==0.0.32.post2 pyhocon==0.3.61 pccm==0.4.16 plotly==6.3.0 && \
     find /app -type d -name '__pycache__' -exec rm -r {} + || true
 
 # ---------- Stage 3a: build individual wheels ----------
@@ -114,6 +114,7 @@ RUN git clone --recursive https://github.com/NVlabs/nvdiffrast.git && \
 RUN printf "scipy==1.16.1\nnumpy<2\n" > /req-constraints.txt
 
 RUN git clone --recursive https://github.com/kijai/ComfyUI-Hunyuan3DWrapper.git && \
+    uv pip install pybind11==2.13.6 && \ 
     pip wheel -r ComfyUI-Hunyuan3DWrapper/requirements.txt -c /req-constraints.txt -w /wheels && \
     pip wheel ./ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/custom_rasterizer -c /req-constraints.txt -w /wheels --no-build-isolation && \
     pip wheel ./ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/differentiable_renderer -c /req-constraints.txt -w /wheels --no-build-isolation
@@ -122,11 +123,14 @@ RUN git clone --recursive https://github.com/kijai/ComfyUI-Hunyuan3DWrapper.git 
 #     cd cumm && \
 #     uv pip install -r requirements.txt --no-build-isolation
 
-# ENV SPCONV_DISABLE_JIT="1"
+ENV SPCONV_DISABLE_JIT="1"
+ENV CUMM_CUDA_ARCH_LIST="6.1;7.0;7.5;8.0;8.6;8.9;9.0"
 
-# RUN git clone https://github.com/traveller59/spconv && \
-#     uv pip install pccm cumm && \
-#     pip wheel ./spconv -w /wheels --no-build-isolation
+ENV CUMM_CUDA_VERSION="12.6"
+
+RUN git clone https://github.com/traveller59/spconv && \
+    uv pip install pccm cumm && \
+    pip wheel ./spconv -w /wheels --no-build-isolation
 
 # ---------- Stage 3b: install wheels  ----------
 FROM venv-builder AS native-builder
@@ -151,7 +155,7 @@ RUN mkdir -p ${TORCH_EXTENSIONS_DIR}
 RUN --mount=from=wheel-builder,source=/wheels,target=/mnt/wheels,ro \
     --mount=type=cache,target=/root/.cache/pip \
     uv pip install --no-index --find-links=/mnt/wheels --only-binary=:all: --no-deps \
-      diff_gaussian_rasterization  pytorch3d torch_scatter nvdiffrast mesh_processor custom_rasterizer nvdiffrast 
+      diff_gaussian_rasterization  pytorch3d torch_scatter nvdiffrast mesh_processor custom_rasterizer nvdiffrast spconv_cu126 
 
 
 # ---------- Stage 4: ComfyUI + nodes ----------
@@ -168,6 +172,8 @@ COPY ./constraints.txt /app/constraints.txt
 ENV UV_CONSTRAINT=/app/constraints.txt
 ENV PIP_CONSTRAINT=/app/constraints.txt
 
+COPY ./requirements.txt /app/requirements.txt
+RUN uv pip install -r /app/requirements.txt
 # install diso dependency for comfy3dpack
 RUN uv pip install diso --no-build-isolation 
 
