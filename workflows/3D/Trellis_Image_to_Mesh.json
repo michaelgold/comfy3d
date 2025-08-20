@@ -1,0 +1,483 @@
+{
+  "id": "5c6a386f-cfe4-4314-a3fd-f052d5d0308e",
+  "revision": 0,
+  "last_node_id": 19,
+  "last_link_id": 23,
+  "nodes": [
+    {
+      "id": 13,
+      "type": "[Comfy3D] Preview 3DMesh",
+      "pos": [
+        3802,
+        820.2344360351562
+      ],
+      "size": [
+        600,
+        500
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh_file_path",
+          "type": "STRING",
+          "widget": {
+            "name": "mesh_file_path"
+          },
+          "link": 15
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "cnr_id": "ComfyUI-3D-Pack",
+        "ver": "9ab02eb440b98cf7dea0c2de9379f45d99d160d5",
+        "Node name for S&R": "[Comfy3D] Preview 3DMesh",
+        "aux_id": "MrForExample/ComfyUI-3D-Pack"
+      },
+      "widgets_values": [
+        "",
+        null
+      ]
+    },
+    {
+      "id": 19,
+      "type": "MaskPreview+",
+      "pos": [
+        2672.409423828125,
+        1406.99951171875
+      ],
+      "size": [
+        210,
+        246
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mask",
+          "type": "MASK",
+          "link": 20
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "cnr_id": "comfyui_essentials",
+        "ver": "33ff89fd354d8ec3ab6affb605a79a931b445d99",
+        "Node name for S&R": "MaskPreview+"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 10,
+      "type": "[Comfy3D] Trellis Structured 3D Latents Models",
+      "pos": [
+        2578.3505859375,
+        984.515625
+      ],
+      "size": [
+        332.93328857421875,
+        218
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "trellis_pipe",
+          "type": "TRELLIS_PIPE",
+          "link": 9
+        },
+        {
+          "name": "reference_image",
+          "type": "IMAGE",
+          "link": 22
+        },
+        {
+          "name": "reference_mask",
+          "type": "MASK",
+          "link": 23
+        }
+      ],
+      "outputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "slot_index": 0,
+          "links": [
+            14
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "ComfyUI-3D-Pack",
+        "ver": "9ab02eb440b98cf7dea0c2de9379f45d99d160d5",
+        "Node name for S&R": "[Comfy3D] Trellis Structured 3D Latents Models",
+        "aux_id": "MrForExample/ComfyUI-3D-Pack"
+      },
+      "widgets_values": [
+        100779754480417,
+        "randomize",
+        7.5,
+        12,
+        3,
+        12
+      ]
+    },
+    {
+      "id": 3,
+      "type": "LoadImage",
+      "pos": [
+        1759.9415283203125,
+        1050.0682373046875
+      ],
+      "size": [
+        353.18182373046875,
+        489.7575378417969
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "slot_index": 0,
+          "links": [
+            21
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "slot_index": 1,
+          "links": []
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.50",
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "wrestler-front.png",
+        "image"
+      ]
+    },
+    {
+      "id": 9,
+      "type": "[Comfy3D] Load Trellis Structured 3D Latents Models",
+      "pos": [
+        1757.0379638671875,
+        888.6103515625
+      ],
+      "size": [
+        344.3999938964844,
+        58
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "trellis_pipe",
+          "type": "TRELLIS_PIPE",
+          "slot_index": 0,
+          "links": [
+            9
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "ComfyUI-3D-Pack",
+        "ver": "9ab02eb440b98cf7dea0c2de9379f45d99d160d5",
+        "Node name for S&R": "[Comfy3D] Load Trellis Structured 3D Latents Models",
+        "aux_id": "MrForExample/ComfyUI-3D-Pack"
+      },
+      "widgets_values": [
+        "jetx/TRELLIS-image-large"
+      ]
+    },
+    {
+      "id": 17,
+      "type": "TransparentBGSession+",
+      "pos": [
+        2121.93701171875,
+        756.0076293945312
+      ],
+      "size": [
+        340.20001220703125,
+        82
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "REMBG_SESSION",
+          "type": "REMBG_SESSION",
+          "slot_index": 0,
+          "links": [
+            19
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui_essentials",
+        "ver": "33ff89fd354d8ec3ab6affb605a79a931b445d99",
+        "Node name for S&R": "TransparentBGSession+"
+      },
+      "widgets_values": [
+        "base",
+        true
+      ]
+    },
+    {
+      "id": 18,
+      "type": "ImageRemoveBackground+",
+      "pos": [
+        2181.63623046875,
+        1105.2078857421875
+      ],
+      "size": [
+        327.5999755859375,
+        46
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "rembg_session",
+          "type": "REMBG_SESSION",
+          "link": 19
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 21
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "slot_index": 0,
+          "links": [
+            22
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "slot_index": 1,
+          "links": [
+            20,
+            23
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui_essentials",
+        "ver": "33ff89fd354d8ec3ab6affb605a79a931b445d99",
+        "Node name for S&R": "ImageRemoveBackground+"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 16,
+      "type": "Preview3D",
+      "pos": [
+        3131.726806640625,
+        1004.71826171875
+      ],
+      "size": [
+        400,
+        550
+      ],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "camera_info",
+          "shape": 7,
+          "type": "LOAD3D_CAMERA",
+          "link": null
+        },
+        {
+          "name": "model_file",
+          "type": "STRING",
+          "widget": {
+            "name": "model_file"
+          },
+          "link": 17
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.50",
+        "Node name for S&R": "Preview3D",
+        "Last Time Model File": "/app/comfy/output/Test_TRELLIS/mesh_0.glb",
+        "Resource Folder": "comfy/output/Test_TRELLIS",
+        "Camera Info": {
+          "position": {
+            "x": -5.55816443921777,
+            "y": -2.1311917256833057,
+            "z": 14.067187516930792
+          },
+          "target": {
+            "x": 0,
+            "y": 1.9591926484705044,
+            "z": 0
+          },
+          "zoom": 1,
+          "cameraType": "perspective"
+        },
+        "Material Mode": "wireframe"
+      },
+      "widgets_values": [
+        "/app/comfy/output/Test_TRELLIS/mesh_0.glb",
+        ""
+      ]
+    },
+    {
+      "id": 12,
+      "type": "[Comfy3D] Save 3D Mesh",
+      "pos": [
+        2780.512939453125,
+        868.7192993164062
+      ],
+      "size": [
+        315,
+        58
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 14
+        }
+      ],
+      "outputs": [
+        {
+          "name": "save_path",
+          "type": "STRING",
+          "slot_index": 0,
+          "links": [
+            15,
+            17
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "ComfyUI-3D-Pack",
+        "ver": "9ab02eb440b98cf7dea0c2de9379f45d99d160d5",
+        "Node name for S&R": "[Comfy3D] Save 3D Mesh",
+        "aux_id": "MrForExample/ComfyUI-3D-Pack"
+      },
+      "widgets_values": [
+        "Test_TRELLIS/mesh_0.glb"
+      ]
+    }
+  ],
+  "links": [
+    [
+      9,
+      9,
+      0,
+      10,
+      0,
+      "TRELLIS_PIPE"
+    ],
+    [
+      14,
+      10,
+      0,
+      12,
+      0,
+      "MESH"
+    ],
+    [
+      15,
+      12,
+      0,
+      13,
+      0,
+      "STRING"
+    ],
+    [
+      17,
+      12,
+      0,
+      16,
+      1,
+      "STRING"
+    ],
+    [
+      19,
+      17,
+      0,
+      18,
+      0,
+      "REMBG_SESSION"
+    ],
+    [
+      20,
+      18,
+      1,
+      19,
+      0,
+      "MASK"
+    ],
+    [
+      21,
+      3,
+      0,
+      18,
+      1,
+      "IMAGE"
+    ],
+    [
+      22,
+      18,
+      0,
+      10,
+      1,
+      "IMAGE"
+    ],
+    [
+      23,
+      18,
+      1,
+      10,
+      2,
+      "MASK"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 1.0030091546101951,
+      "offset": [
+        -2289.92993490307,
+        -992.6952646949917
+      ]
+    },
+    "frontendVersion": "1.26.4",
+    "VHS_latentpreview": false,
+    "VHS_latentpreviewrate": 0,
+    "VHS_MetadataImage": true,
+    "VHS_KeepIntermediate": true
+  },
+  "version": 0.4
+}

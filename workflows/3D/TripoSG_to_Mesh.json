@@ -1,0 +1,1049 @@
+{
+  "id": "74bbccb9-f4dc-425a-ab0d-43fa635cd3b9",
+  "revision": 0,
+  "last_node_id": 39,
+  "last_link_id": 68,
+  "nodes": [
+    {
+      "id": 10,
+      "type": "[Comfy3D] TripoSG I23D Model",
+      "pos": [
+        1336.7540283203125,
+        118.28916931152344
+      ],
+      "size": [
+        380.4000244140625,
+        246
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "tsg_pipe",
+          "type": "DIFFUSERS_PIPE",
+          "link": 9
+        },
+        {
+          "name": "reference_image",
+          "type": "IMAGE",
+          "link": 67
+        }
+      ],
+      "outputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "links": [
+            11,
+            14
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-3d-pack",
+        "ver": "0.1.6",
+        "Node name for S&R": "[Comfy3D] TripoSG I23D Model"
+      },
+      "widgets_values": [
+        42,
+        "fixed",
+        7,
+        50,
+        true,
+        9,
+        9,
+        8
+      ]
+    },
+    {
+      "id": 5,
+      "type": "[Comfy3D] Load Diffusers Pipeline",
+      "pos": [
+        920.5219116210938,
+        -113.41339874267578
+      ],
+      "size": [
+        309.2200012207031,
+        178
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "pipe",
+          "type": "DIFFUSERS_PIPE",
+          "links": [
+            9
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-3d-pack",
+        "ver": "0.1.6",
+        "Node name for S&R": "[Comfy3D] Load Diffusers Pipeline"
+      },
+      "widgets_values": [
+        "TripoSGPipeline",
+        "VAST-AI/TripoSG",
+        "",
+        false,
+        "",
+        true
+      ]
+    },
+    {
+      "id": 11,
+      "type": "[Comfy3D] Decimate Mesh",
+      "pos": [
+        1774.988525390625,
+        118.2227554321289
+      ],
+      "size": [
+        315,
+        106
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 11
+        }
+      ],
+      "outputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "links": [
+            12
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-3d-pack",
+        "ver": "0.1.6",
+        "Node name for S&R": "[Comfy3D] Decimate Mesh"
+      },
+      "widgets_values": [
+        20000,
+        true,
+        true
+      ]
+    },
+    {
+      "id": 39,
+      "type": "PreviewImage",
+      "pos": [
+        1014.1951293945312,
+        257.3294677734375
+      ],
+      "size": [
+        140,
+        246
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 68
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.50",
+        "Node name for S&R": "PreviewImage"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 38,
+      "type": "54da99ed-5632-465f-8885-fa071584d7d7",
+      "pos": [
+        505.3486022949219,
+        250.40716552734375
+      ],
+      "size": [
+        236.7630157470703,
+        65.99295043945312
+      ],
+      "flags": {
+        "collapsed": false
+      },
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 66
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            67,
+            68
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.50"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 2,
+      "type": "LoadImage",
+      "pos": [
+        -118.9631118774414,
+        171.59298706054688
+      ],
+      "size": [
+        473.3881530761719,
+        545.7767944335938
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "slot_index": 0,
+          "links": [
+            66
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "slot_index": 1,
+          "links": []
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.50",
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "wrestler-front.png",
+        "image"
+      ]
+    },
+    {
+      "id": 24,
+      "type": "Preview3D",
+      "pos": [
+        2694.998291015625,
+        31.547788619995117
+      ],
+      "size": [
+        400,
+        550
+      ],
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "camera_info",
+          "shape": 7,
+          "type": "LOAD3D_CAMERA",
+          "link": null
+        },
+        {
+          "name": "model_file",
+          "type": "STRING",
+          "widget": {
+            "name": "model_file"
+          },
+          "link": 37
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.50",
+        "Node name for S&R": "Preview3D",
+        "Last Time Model File": "/app/comfy/output/TripoSG_Test/wrestler-decimated.glb",
+        "Resource Folder": "comfy/output/TripoSG_Test",
+        "Camera Info": {
+          "position": {
+            "x": -2.012729248975781,
+            "y": 3.3496152303765556,
+            "z": -3.695661236167541
+          },
+          "target": {
+            "x": 0,
+            "y": 2.4703626551602733,
+            "z": 0
+          },
+          "zoom": 1,
+          "cameraType": "perspective"
+        },
+        "Material Mode": "original",
+        "Up Direction": "original"
+      },
+      "widgets_values": [
+        "/app/comfy/output/TripoSG_Test/wrestler-decimated.glb",
+        ""
+      ]
+    },
+    {
+      "id": 22,
+      "type": "Preview3D",
+      "pos": [
+        2232.154541015625,
+        256.0432434082031
+      ],
+      "size": [
+        400,
+        550
+      ],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "camera_info",
+          "shape": 7,
+          "type": "LOAD3D_CAMERA",
+          "link": null
+        },
+        {
+          "name": "model_file",
+          "type": "STRING",
+          "widget": {
+            "name": "model_file"
+          },
+          "link": 33
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.50",
+        "Node name for S&R": "Preview3D",
+        "Last Time Model File": "/app/comfy/output/TripoSG_Test/wrestler1.glb",
+        "Resource Folder": "comfy/output/TripoSG_Test",
+        "Camera Info": {
+          "position": {
+            "x": -1.9334722305999104,
+            "y": 4.3208864999835,
+            "z": 6.05174319978526
+          },
+          "target": {
+            "x": 0,
+            "y": 2.3506286790684756,
+            "z": 0
+          },
+          "zoom": 1,
+          "cameraType": "perspective"
+        },
+        "Material Mode": "original"
+      },
+      "widgets_values": [
+        "/app/comfy/output/TripoSG_Test/wrestler1.glb",
+        ""
+      ]
+    },
+    {
+      "id": 14,
+      "type": "[Comfy3D] Save 3D Mesh",
+      "pos": [
+        1774.304931640625,
+        279.5744934082031
+      ],
+      "size": [
+        260.8727111816406,
+        58
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 14
+        }
+      ],
+      "outputs": [
+        {
+          "name": "save_path",
+          "type": "STRING",
+          "links": [
+            33
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-3d-pack",
+        "ver": "0.1.6",
+        "Node name for S&R": "[Comfy3D] Save 3D Mesh"
+      },
+      "widgets_values": [
+        "TripoSG_Test/wrestler1.glb"
+      ]
+    },
+    {
+      "id": 13,
+      "type": "[Comfy3D] Save 3D Mesh",
+      "pos": [
+        2133.0234375,
+        117.99606323242188
+      ],
+      "size": [
+        260.8727111816406,
+        58
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh",
+          "type": "MESH",
+          "link": 12
+        }
+      ],
+      "outputs": [
+        {
+          "name": "save_path",
+          "type": "STRING",
+          "links": [
+            37
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-3d-pack",
+        "ver": "0.1.6",
+        "Node name for S&R": "[Comfy3D] Save 3D Mesh"
+      },
+      "widgets_values": [
+        "TripoSG_Test/wrestler-decimated.glb"
+      ]
+    }
+  ],
+  "links": [
+    [
+      9,
+      5,
+      0,
+      10,
+      0,
+      "DIFFUSERS_PIPE"
+    ],
+    [
+      11,
+      10,
+      0,
+      11,
+      0,
+      "MESH"
+    ],
+    [
+      12,
+      11,
+      0,
+      13,
+      0,
+      "MESH"
+    ],
+    [
+      14,
+      10,
+      0,
+      14,
+      0,
+      "MESH"
+    ],
+    [
+      33,
+      14,
+      0,
+      22,
+      1,
+      "STRING"
+    ],
+    [
+      37,
+      13,
+      0,
+      24,
+      1,
+      "STRING"
+    ],
+    [
+      66,
+      2,
+      0,
+      38,
+      0,
+      "IMAGE"
+    ],
+    [
+      67,
+      38,
+      0,
+      10,
+      1,
+      "IMAGE"
+    ],
+    [
+      68,
+      38,
+      0,
+      39,
+      0,
+      "IMAGE"
+    ]
+  ],
+  "groups": [],
+  "definitions": {
+    "subgraphs": [
+      {
+        "id": "54da99ed-5632-465f-8885-fa071584d7d7",
+        "version": 1,
+        "state": {
+          "lastGroupId": 0,
+          "lastNodeId": 37,
+          "lastLinkId": 66,
+          "lastRerouteId": 0
+        },
+        "revision": 0,
+        "config": {},
+        "name": "Replace BG with White",
+        "inputNode": {
+          "id": -10,
+          "bounding": [
+            -148.66076278686523,
+            351.75658416748047,
+            120,
+            60
+          ]
+        },
+        "outputNode": {
+          "id": -20,
+          "bounding": [
+            1250.9659423828125,
+            351.75658416748047,
+            120,
+            60
+          ]
+        },
+        "inputs": [
+          {
+            "id": "bb75d47c-d7c6-463a-a9f8-b0822e679f4d",
+            "name": "image",
+            "type": "IMAGE",
+            "linkIds": [
+              30
+            ],
+            "localized_name": "image",
+            "pos": {
+              "0": -48.660762786865234,
+              "1": 371.756591796875
+            }
+          }
+        ],
+        "outputs": [
+          {
+            "id": "5e084830-c2ab-4381-b6d8-097129297a90",
+            "name": "IMAGE",
+            "type": "IMAGE",
+            "linkIds": [
+              66
+            ],
+            "localized_name": "IMAGE",
+            "pos": {
+              "0": 1270.9659423828125,
+              "1": 371.756591796875
+            }
+          }
+        ],
+        "widgets": [],
+        "nodes": [
+          {
+            "id": 30,
+            "type": "PreviewImage",
+            "pos": [
+              903.0560913085938,
+              -80.91676330566406
+            ],
+            "size": [
+              140,
+              246
+            ],
+            "flags": {},
+            "order": 5,
+            "mode": 0,
+            "inputs": [
+              {
+                "localized_name": "images",
+                "name": "images",
+                "type": "IMAGE",
+                "link": 40
+              }
+            ],
+            "outputs": [],
+            "properties": {
+              "cnr_id": "comfy-core",
+              "ver": "0.3.50",
+              "Node name for S&R": "PreviewImage"
+            },
+            "widgets_values": []
+          },
+          {
+            "id": 20,
+            "type": "RemBGSession+",
+            "pos": [
+              31.339237213134766,
+              450.2449035644531
+            ],
+            "size": [
+              270,
+              82
+            ],
+            "flags": {},
+            "order": 0,
+            "mode": 0,
+            "inputs": [],
+            "outputs": [
+              {
+                "localized_name": "REMBG_SESSION",
+                "name": "REMBG_SESSION",
+                "type": "REMBG_SESSION",
+                "links": [
+                  29
+                ]
+              }
+            ],
+            "properties": {
+              "cnr_id": "comfyui_essentials",
+              "ver": "9d9f4bedfc9f0321c19faf71855e228c93bd0dc9",
+              "Node name for S&R": "RemBGSession+"
+            },
+            "widgets_values": [
+              "u2net: general purpose",
+              "CPU"
+            ]
+          },
+          {
+            "id": 28,
+            "type": "MaskToImage",
+            "pos": [
+              449.06060791015625,
+              -46.0753173828125
+            ],
+            "size": [
+              184.62362670898438,
+              26
+            ],
+            "flags": {},
+            "order": 4,
+            "mode": 0,
+            "inputs": [
+              {
+                "localized_name": "mask",
+                "name": "mask",
+                "type": "MASK",
+                "link": 42
+              }
+            ],
+            "outputs": [
+              {
+                "localized_name": "IMAGE",
+                "name": "IMAGE",
+                "type": "IMAGE",
+                "links": [
+                  40,
+                  60
+                ]
+              }
+            ],
+            "properties": {
+              "cnr_id": "comfy-core",
+              "ver": "0.3.50",
+              "Node name for S&R": "MaskToImage"
+            },
+            "widgets_values": []
+          },
+          {
+            "id": 32,
+            "type": "PreviewImage",
+            "pos": [
+              729.2913818359375,
+              438.75494384765625
+            ],
+            "size": [
+              140,
+              246.00001525878906
+            ],
+            "flags": {},
+            "order": 7,
+            "mode": 0,
+            "inputs": [
+              {
+                "localized_name": "images",
+                "name": "images",
+                "type": "IMAGE",
+                "link": 62
+              }
+            ],
+            "outputs": [],
+            "properties": {
+              "cnr_id": "comfy-core",
+              "ver": "0.3.50",
+              "Node name for S&R": "PreviewImage"
+            },
+            "widgets_values": []
+          },
+          {
+            "id": 23,
+            "type": "PreviewImage",
+            "pos": [
+              507.5242919921875,
+              388.412841796875
+            ],
+            "size": [
+              140,
+              246.00003051757812
+            ],
+            "flags": {},
+            "order": 3,
+            "mode": 0,
+            "inputs": [
+              {
+                "localized_name": "images",
+                "name": "images",
+                "type": "IMAGE",
+                "link": 34
+              }
+            ],
+            "outputs": [],
+            "properties": {
+              "cnr_id": "comfy-core",
+              "ver": "0.3.50",
+              "Node name for S&R": "PreviewImage"
+            },
+            "widgets_values": []
+          },
+          {
+            "id": 21,
+            "type": "ImageRemoveBackground+",
+            "pos": [
+              172.5235137939453,
+              205.54629516601562
+            ],
+            "size": [
+              235.32675170898438,
+              46
+            ],
+            "flags": {},
+            "order": 2,
+            "mode": 0,
+            "inputs": [
+              {
+                "localized_name": "rembg_session",
+                "name": "rembg_session",
+                "type": "REMBG_SESSION",
+                "link": 29
+              },
+              {
+                "localized_name": "image",
+                "name": "image",
+                "type": "IMAGE",
+                "link": 30
+              }
+            ],
+            "outputs": [
+              {
+                "localized_name": "IMAGE",
+                "name": "IMAGE",
+                "type": "IMAGE",
+                "links": [
+                  34,
+                  38,
+                  58
+                ]
+              },
+              {
+                "localized_name": "MASK",
+                "name": "MASK",
+                "type": "MASK",
+                "links": [
+                  41,
+                  59
+                ]
+              }
+            ],
+            "properties": {
+              "cnr_id": "comfyui_essentials",
+              "ver": "9d9f4bedfc9f0321c19faf71855e228c93bd0dc9",
+              "Node name for S&R": "ImageRemoveBackground+"
+            },
+            "widgets_values": []
+          },
+          {
+            "id": 31,
+            "type": "InvertMask",
+            "pos": [
+              303.4385070800781,
+              27.14857292175293
+            ],
+            "size": [
+              140,
+              26
+            ],
+            "flags": {},
+            "order": 6,
+            "mode": 0,
+            "inputs": [
+              {
+                "localized_name": "mask",
+                "name": "mask",
+                "type": "MASK",
+                "link": 41
+              }
+            ],
+            "outputs": [
+              {
+                "localized_name": "MASK",
+                "name": "MASK",
+                "type": "MASK",
+                "links": [
+                  42
+                ]
+              }
+            ],
+            "properties": {
+              "cnr_id": "comfy-core",
+              "ver": "0.3.50",
+              "Node name for S&R": "InvertMask"
+            },
+            "widgets_values": []
+          },
+          {
+            "id": 19,
+            "type": "PreviewImage",
+            "pos": [
+              931.685791015625,
+              396.2566223144531
+            ],
+            "size": [
+              259.2801818847656,
+              478.1733093261719
+            ],
+            "flags": {},
+            "order": 1,
+            "mode": 0,
+            "inputs": [
+              {
+                "localized_name": "images",
+                "name": "images",
+                "type": "IMAGE",
+                "link": 38
+              }
+            ],
+            "outputs": [],
+            "properties": {
+              "cnr_id": "comfy-core",
+              "ver": "0.3.50",
+              "Node name for S&R": "PreviewImage"
+            },
+            "widgets_values": []
+          },
+          {
+            "id": 37,
+            "type": "ImageCompositeMasked",
+            "pos": [
+              513.8011474609375,
+              73.410400390625
+            ],
+            "size": [
+              270,
+              146
+            ],
+            "flags": {},
+            "order": 8,
+            "mode": 0,
+            "inputs": [
+              {
+                "localized_name": "destination",
+                "name": "destination",
+                "type": "IMAGE",
+                "link": 60
+              },
+              {
+                "localized_name": "source",
+                "name": "source",
+                "type": "IMAGE",
+                "link": 58
+              },
+              {
+                "localized_name": "mask",
+                "name": "mask",
+                "shape": 7,
+                "type": "MASK",
+                "link": 59
+              }
+            ],
+            "outputs": [
+              {
+                "localized_name": "IMAGE",
+                "name": "IMAGE",
+                "type": "IMAGE",
+                "links": [
+                  62,
+                  66
+                ]
+              }
+            ],
+            "properties": {
+              "cnr_id": "comfy-core",
+              "ver": "0.3.50",
+              "Node name for S&R": "ImageCompositeMasked"
+            },
+            "widgets_values": [
+              0,
+              0,
+              false
+            ]
+          }
+        ],
+        "groups": [],
+        "links": [
+          {
+            "id": 40,
+            "origin_id": 28,
+            "origin_slot": 0,
+            "target_id": 30,
+            "target_slot": 0,
+            "type": "IMAGE"
+          },
+          {
+            "id": 42,
+            "origin_id": 31,
+            "origin_slot": 0,
+            "target_id": 28,
+            "target_slot": 0,
+            "type": "MASK"
+          },
+          {
+            "id": 62,
+            "origin_id": 37,
+            "origin_slot": 0,
+            "target_id": 32,
+            "target_slot": 0,
+            "type": "IMAGE"
+          },
+          {
+            "id": 34,
+            "origin_id": 21,
+            "origin_slot": 0,
+            "target_id": 23,
+            "target_slot": 0,
+            "type": "IMAGE"
+          },
+          {
+            "id": 29,
+            "origin_id": 20,
+            "origin_slot": 0,
+            "target_id": 21,
+            "target_slot": 0,
+            "type": "REMBG_SESSION"
+          },
+          {
+            "id": 60,
+            "origin_id": 28,
+            "origin_slot": 0,
+            "target_id": 37,
+            "target_slot": 0,
+            "type": "IMAGE"
+          },
+          {
+            "id": 58,
+            "origin_id": 21,
+            "origin_slot": 0,
+            "target_id": 37,
+            "target_slot": 1,
+            "type": "IMAGE"
+          },
+          {
+            "id": 59,
+            "origin_id": 21,
+            "origin_slot": 1,
+            "target_id": 37,
+            "target_slot": 2,
+            "type": "MASK"
+          },
+          {
+            "id": 41,
+            "origin_id": 21,
+            "origin_slot": 1,
+            "target_id": 31,
+            "target_slot": 0,
+            "type": "MASK"
+          },
+          {
+            "id": 38,
+            "origin_id": 21,
+            "origin_slot": 0,
+            "target_id": 19,
+            "target_slot": 0,
+            "type": "IMAGE"
+          },
+          {
+            "id": 30,
+            "origin_id": -10,
+            "origin_slot": 0,
+            "target_id": 21,
+            "target_slot": 1,
+            "type": "IMAGE"
+          },
+          {
+            "id": 66,
+            "origin_id": 37,
+            "origin_slot": 0,
+            "target_id": -20,
+            "target_slot": 0,
+            "type": "IMAGE"
+          }
+        ],
+        "extra": {}
+      }
+    ]
+  },
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 1.146931923213692,
+      "offset": [
+        -1454.9967925505944,
+        -284.3291707698641
+      ]
+    },
+    "frontendVersion": "1.26.4",
+    "VHS_latentpreview": false,
+    "VHS_latentpreviewrate": 0,
+    "VHS_MetadataImage": true,
+    "VHS_KeepIntermediate": true
+  },
+  "version": 0.4
+}
