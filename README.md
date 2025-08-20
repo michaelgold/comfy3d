@@ -2,11 +2,15 @@
 
 **Comfy3D** is a GPU-accelerated containerized environment for advanced 3D workflows using [ComfyUI](https://github.com/comfyanonymous/ComfyUI), enhanced with real-time diffusion models like Hunyuan3D, FLUX, and various 3D/ControlNet extensions. 
 
-This setup provides out-of-the-box workflows for generating character sheets, textured meshes, and multi-view renders, all within a reproducible and customizable Docker environment. 
+This setup provides out-of-the-box workflows for image generation, video generation, textured meshes, and multi-view renders, all within a reproducible and customizable Docker environment. 
 
 Docker containers are deployed to [https://hub.docker.com/r/michaelgold/comfy3d](https://hub.docker.com/r/michaelgold/comfy3d)
 
+
+![ComfyUI Trellis Image to Mesh Workflow](./.github/images/trellis.jpg)
+
 ---
+
 ## Running
 
 You can easily spin up instances of this Docker container on Runpod
