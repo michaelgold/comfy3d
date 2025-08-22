@@ -132,6 +132,9 @@ RUN git clone https://github.com/traveller59/spconv && \
     uv pip install pccm cumm && \
     pip wheel ./spconv -w /wheels --no-build-isolation
 
+# build flash-attn
+RUN pip wheel flash-attn==2.8.2 -w /wheels --no-build-isolation --no-deps
+
 # ---------- Stage 3b: install wheels  ----------
 FROM venv-builder AS native-builder
 ENV VIRTUAL_ENV="/app/.venv"
@@ -155,7 +158,7 @@ RUN mkdir -p ${TORCH_EXTENSIONS_DIR}
 RUN --mount=from=wheel-builder,source=/wheels,target=/mnt/wheels,ro \
     --mount=type=cache,target=/root/.cache/pip \
     uv pip install --no-index --find-links=/mnt/wheels --only-binary=:all: --no-deps \
-      diff_gaussian_rasterization  pytorch3d torch_scatter nvdiffrast mesh_processor custom_rasterizer nvdiffrast spconv_cu126 
+      diff_gaussian_rasterization  pytorch3d torch_scatter nvdiffrast mesh_processor custom_rasterizer nvdiffrast spconv_cu126 flash-attn 
 
 
 # ---------- Stage 4: ComfyUI + nodes ----------
@@ -175,7 +178,7 @@ ENV PIP_CONSTRAINT=/app/constraints.txt
 COPY ./requirements.txt /app/requirements.txt
 RUN uv pip install -r /app/requirements.txt
 # install diso dependency for comfy3dpack
-RUN uv pip install diso --no-build-isolation 
+RUN uv pip install diso==0.1.4 --no-build-isolation 
 
 
 # ---------- Stage 5: final runtime ----------
