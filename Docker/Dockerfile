@@ -119,10 +119,18 @@ RUN git clone --recursive https://github.com/kijai/ComfyUI-Hunyuan3DWrapper.git 
     pip wheel ./ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/custom_rasterizer -c /req-constraints.txt -w /wheels --no-build-isolation && \
     pip wheel ./ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/differentiable_renderer -c /req-constraints.txt -w /wheels --no-build-isolation
 
+
+ENV MAX_JOBS=4
+ENV TORCH_CUDA_ARCH_LIST="6.1;7.0;7.5;8.0;8.6;8.9;9.0;12.0"
+
+# build flash-attn
+RUN pip wheel flash-attn==2.8.2 -w /wheels --no-build-isolation --no-deps
+
+
 ENV SPCONV_DISABLE_JIT="1"
 ENV CUMM_CUDA_ARCH_LIST="6.1;7.0;7.5;8.0;8.6;8.9;9.0"
 
-ENV CUMM_CUDA_VERSION="12.8"
+ENV CUMM_CUDA_VERSION="12.6"
 
 # Build CUMM as a wheel (a dep for spconv)
 RUN git clone -b v0.7.11 https://github.com/FindDefinition/cumm.git && \
@@ -134,9 +142,6 @@ RUN git clone -b v0.7.11 https://github.com/FindDefinition/cumm.git && \
  
 RUN git clone https://github.com/traveller59/spconv && \
     pip wheel ./spconv -w /wheels --no-build-isolation --find-links /wheels
-
-# build flash-attn
-RUN pip wheel flash-attn==2.8.2 -w /wheels --no-build-isolation --no-deps
 
 # ---------- Stage 3b: install wheels  ----------
 FROM venv-builder AS native-builder
@@ -150,7 +155,7 @@ ENV FORCE_CUDA="1"
 ENV CUDA_HOME="/usr/local/cuda"
 ENV LD_LIBRARY_PATH="/usr/local/lib:/usr/lib/x86_64-linux-gnu:/usr/local/cuda/lib64:/usr/local/cuda/targets/x86_64-linux/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 ENV PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True,garbage_collection_threshold:0.6,max_split_size_mb:128"
-ENV TORCH_CUDA_ARCH_LIST="6.1;7.0;7.5;8.0;8.6;8.9;9.0"
+ENV TORCH_CUDA_ARCH_LIST="6.1;7.0;7.5;8.0;8.6;8.9;9.0;12.0"
 
 
 ENV TORCH_EXTENSIONS_DIR=/app/.venv/torch_extensions 
@@ -167,7 +172,7 @@ RUN --mount=from=wheel-builder,source=/wheels,target=/mnt/wheels,ro \
 # ---------- Stage 4: ComfyUI + nodes ----------
 FROM native-builder AS comfy-builder
 
-ARG CUDA_VERSION_FOR_COMFY=12.8
+ARG CUDA_VERSION_FOR_COMFY=12.6
 ENV CUDA_VERSION_FOR_COMFY=${CUDA_VERSION_FOR_COMFY}
 ENV VERSION=${VERSION}
 ENV VIRTUAL_ENV=/app/.venv
@@ -222,13 +227,13 @@ ENV FORCE_CUDA="1"
 ENV CUDA_HOME="/usr/local/cuda"
 ENV LD_LIBRARY_PATH="/usr/local/lib:/usr/lib/x86_64-linux-gnu:/usr/local/cuda/lib64:/usr/local/cuda/targets/x86_64-linux/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
-ENV TORCH_CUDA_ARCH_LIST="6.1;7.0;7.5;8.0;8.6;8.9;9.0;10.0;12.0"
-ARG TORCH_CUDA=cu128
+ENV TORCH_CUDA_ARCH_LIST="6.1;7.0;7.5;8.0;8.6;8.9;9.0;12.0"
+ARG TORCH_CUDA=cu126
 ENV TORCH_CUDA=${TORCH_CUDA}
 
 # Version arguments for ComfyUI
 ARG VERSION=v0.3.50
-ARG UPDATE_VERSION=v0.3.51
+ARG UPDATE_VERSION=v0.3.52
 ENV VERSION=${VERSION}
 ENV UPDATE_VERSION=${UPDATE_VERSION}
 

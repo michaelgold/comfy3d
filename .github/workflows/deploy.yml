@@ -70,7 +70,7 @@ jobs:
       matrix:
         cuda:
           - base_image: nvidia/cuda:12.8.1-cudnn-devel-ubuntu24.04
-            torch_cuda: cu128
+            torch_cuda: cu126
             tag_suffix: cuda12.8
     runs-on: self-hosted
     timeout-minutes: 120
