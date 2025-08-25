@@ -69,9 +69,9 @@ jobs:
     strategy:
       matrix:
         cuda:
-          - base_image: nvidia/cuda:12.6.3-cudnn-devel-ubuntu24.04
-            torch_cuda: cu126
-            tag_suffix: cuda12.6
+          - base_image: nvidia/cuda:12.8.1-cudnn-devel-ubuntu24.04
+            torch_cuda: cu128
+            tag_suffix: cuda12.8
     runs-on: self-hosted
     timeout-minutes: 120
     steps:
@@ -110,7 +110,7 @@ jobs:
     strategy:
       matrix:
         cuda:
-          - tag_suffix: cuda12.6
+          - tag_suffix: cuda12.8
             latest: true
     steps:
       - name: Log in to Docker Hub
