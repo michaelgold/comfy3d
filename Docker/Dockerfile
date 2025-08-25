@@ -1,5 +1,5 @@
 # ---------- Stage 0: base build tools ----------
-ARG CUDA_TAG=12.6.3-cudnn-devel-ubuntu24.04
+ARG CUDA_TAG=12.8.1-cudnn-devel-ubuntu24.04
 FROM nvidia/cuda:${CUDA_TAG} AS build-base
 
 ENV DEBIAN_FRONTEND=noninteractive PIP_PREFER_BINARY=1 CMAKE_BUILD_PARALLEL_LEVEL=8
@@ -81,7 +81,7 @@ ENV FORCE_CUDA="1"
 ENV CUDA_HOME="/usr/local/cuda"
 ENV LD_LIBRARY_PATH="/usr/local/lib:/usr/lib/x86_64-linux-gnu:/usr/local/cuda/lib64:/usr/local/cuda/targets/x86_64-linux/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 ENV PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True,garbage_collection_threshold:0.6,max_split_size_mb:128"
-ENV TORCH_CUDA_ARCH_LIST="6.1;7.0;7.5;8.0;8.6;8.9;9.0"
+ENV TORCH_CUDA_ARCH_LIST="6.1;7.0;7.5;8.0;8.6;8.9;9.0;10.0;12.0"
 
 WORKDIR /wheels
 
@@ -124,9 +124,9 @@ RUN git clone --recursive https://github.com/kijai/ComfyUI-Hunyuan3DWrapper.git 
 #     uv pip install -r requirements.txt --no-build-isolation
 
 ENV SPCONV_DISABLE_JIT="1"
-ENV CUMM_CUDA_ARCH_LIST="6.1;7.0;7.5;8.0;8.6;8.9;9.0"
+ENV CUMM_CUDA_ARCH_LIST="6.1;7.0;7.5;8.0;8.6;8.9;9.0;10.0;12.0"
 
-ENV CUMM_CUDA_VERSION="12.6"
+ENV CUMM_CUDA_VERSION="12.8"
 
 RUN git clone https://github.com/traveller59/spconv && \
     uv pip install pccm cumm && \
@@ -164,7 +164,7 @@ RUN --mount=from=wheel-builder,source=/wheels,target=/mnt/wheels,ro \
 # ---------- Stage 4: ComfyUI + nodes ----------
 FROM native-builder AS comfy-builder
 
-ARG CUDA_VERSION_FOR_COMFY=12.6
+ARG CUDA_VERSION_FOR_COMFY=12.8
 ENV CUDA_VERSION_FOR_COMFY=${CUDA_VERSION_FOR_COMFY}
 ENV VERSION=${VERSION}
 ENV VIRTUAL_ENV=/app/.venv
@@ -182,10 +182,10 @@ RUN uv pip install diso==0.1.4 --no-build-isolation
 
 
 # ---------- Stage 5: final runtime ----------
-FROM nvidia/cuda:12.6.3-cudnn-runtime-ubuntu24.04 AS final
+FROM nvidia/cuda:12.8.1-cudnn-runtime-ubuntu24.04 AS final
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libgl1 libegl1 cuda-minimal-build-12-6 libcusparse-dev-12-6 libcublas-dev-12-6 libcusolver-dev-12-6 wget curl git \
+    libgl1 libegl1 cuda-minimal-build-12-8 libcusparse-dev-12-8 libcublas-dev-12-8 libcusolver-dev-12-8 wget curl git \
     && apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
 
@@ -219,8 +219,8 @@ ENV FORCE_CUDA="1"
 ENV CUDA_HOME="/usr/local/cuda"
 ENV LD_LIBRARY_PATH="/usr/local/lib:/usr/lib/x86_64-linux-gnu:/usr/local/cuda/lib64:/usr/local/cuda/targets/x86_64-linux/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
-ENV TORCH_CUDA_ARCH_LIST="6.1;7.0;7.5;8.0;8.6;8.9;9.0"
-ARG TORCH_CUDA=cu126
+ENV TORCH_CUDA_ARCH_LIST="6.1;7.0;7.5;8.0;8.6;8.9;9.0;10.0;12.0"
+ARG TORCH_CUDA=cu128
 ENV TORCH_CUDA=${TORCH_CUDA}
 
 # Version arguments for ComfyUI
