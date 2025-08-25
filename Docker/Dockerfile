@@ -119,18 +119,21 @@ RUN git clone --recursive https://github.com/kijai/ComfyUI-Hunyuan3DWrapper.git 
     pip wheel ./ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/custom_rasterizer -c /req-constraints.txt -w /wheels --no-build-isolation && \
     pip wheel ./ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/differentiable_renderer -c /req-constraints.txt -w /wheels --no-build-isolation
 
-# RUN git clone https://github.com/FindDefinition/cumm && \
-#     cd cumm && \
-#     uv pip install -r requirements.txt --no-build-isolation
-
 ENV SPCONV_DISABLE_JIT="1"
-ENV CUMM_CUDA_ARCH_LIST="6.1;7.0;7.5;8.0;8.6;8.9;9.0;10.0;12.0"
+ENV CUMM_CUDA_ARCH_LIST="6.1;7.0;7.5;8.0;8.6;8.9;9.0"
 
 ENV CUMM_CUDA_VERSION="12.8"
 
+# Build CUMM as a wheel (a dep for spconv)
+RUN git clone -b v0.7.11 https://github.com/FindDefinition/cumm.git && \
+    cd cumm && \
+    uv pip install -e . &&\
+    python setup.py bdist_wheel && \
+    cp dist/*.whl /wheels/
+
+ 
 RUN git clone https://github.com/traveller59/spconv && \
-    uv pip install pccm cumm && \
-    pip wheel ./spconv -w /wheels --no-build-isolation
+    pip wheel ./spconv -w /wheels --no-build-isolation --find-links /wheels
 
 # build flash-attn
 RUN pip wheel flash-attn==2.8.2 -w /wheels --no-build-isolation --no-deps
