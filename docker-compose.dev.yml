@@ -4,13 +4,6 @@ services:
       context: .
       dockerfile: Docker/Dockerfile
     container_name: comfy3d-dev
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
     shm_size: 16gb
     ports:
       - "8188:8188"
@@ -18,10 +11,11 @@ services:
       - ./output:/app/comfy/output:cached
       - ./workflows:/app/comfy/user/default/workflows:cached
       - ./input:/app/comfy/input:cached
-      - comfyui-models:/app/comfy/models
+      - ./models:/app/comfy/models
       - comfyui-manager:/app/comfy/user/default/ComfyUI-Manager
       - comfyui-u2net:/root/.u2net
       - .:/workspace
+    gpus: all
 
 
 volumes:

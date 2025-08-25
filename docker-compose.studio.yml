@@ -2,13 +2,6 @@ services:
   comfy3d:
     image: michaelgold/comfy3d:latest
     container_name: comfy3d-studio
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
     shm_size: 16gb
     ports:
       - "8188:8188"
@@ -21,6 +14,7 @@ services:
       - comfyui-manager:/app/comfy/user/default/ComfyUI-Manager
       - comfyui-u2net:/root/.u2net
       - .:/workspace
+    gpus: all
 
 volumes:
   comfyui-manager:

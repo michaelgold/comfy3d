@@ -2,13 +2,6 @@ services:
   comfy3d:
     image: michaelgold/comfy3d:latest
     container_name: comfy3d-prod
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
     shm_size: 16gb
     ports:
       - "8188:8188"
@@ -18,14 +11,14 @@ services:
       - ./workflows:/app/comfy/user/default/workflows:cached
       - ./input:/app/comfy/input:cached
       - comfyui-nodes:/app/comfy/custom_nodes
-      - comfyui-models:/app/comfy/models
+      - ./models:/app/comfy/models
       - comfyui-manager:/app/comfy/user/default/ComfyUI-Manager
       - comfyui-u2net:/root/.u2net
       - .:/workspace
+    gpus: all
 
 volumes:
   comfyui-nodes:
-  comfyui-models:
   comfyui-manager:
   comfyui-u2net:
  
