@@ -133,14 +133,15 @@ ENV CUMM_CUDA_ARCH_LIST="6.1;7.0;7.5;8.0;8.6;8.9;9.0"
 ENV CUMM_CUDA_VERSION="12.6"
 
 # Build CUMM as a wheel (a dep for spconv)
-RUN git clone -b v0.7.11 https://github.com/FindDefinition/cumm.git && \
-    cd cumm && \
-    uv pip install -e . &&\
-    python setup.py bdist_wheel && \
-    cp dist/*.whl /wheels/
+# RUN git clone -b v0.7.11 https://github.com/FindDefinition/cumm.git && \
+#     cd cumm && \
+#     uv pip install -e . &&\
+#     python setup.py bdist_wheel && \
+#     cp dist/*.whl /wheels/
 
  
 RUN git clone https://github.com/traveller59/spconv && \
+    uv pip install pccm==0.4.16 cumm==0.8.2 && \
     pip wheel ./spconv -w /wheels --no-build-isolation --find-links /wheels
 
 # ---------- Stage 3b: install wheels  ----------
