@@ -141,8 +141,8 @@ ENV CUMM_CUDA_VERSION="12.6"
 
  
 RUN git clone https://github.com/traveller59/spconv && \
-    uv pip install pccm==0.4.16 cumm==0.8.2 && \
-    pip wheel ./spconv -w /wheels --no-build-isolation --find-links /wheels
+    uv pip install pccm==0.4.16 cumm==0.7.11 && \
+    pip wheel ./spconv -w /wheels --no-build-isolation 
 
 # ---------- Stage 3b: install wheels  ----------
 FROM venv-builder AS native-builder
