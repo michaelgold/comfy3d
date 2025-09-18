@@ -17,6 +17,9 @@ services:
       - .:/workspace
     gpus: all
 
+    devices:
+      - nvidia.com/gpu=all
+
 
 volumes:
   comfyui-nodes:
