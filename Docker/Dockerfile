@@ -62,8 +62,8 @@ ENV PIP_NO_CACHE_DIR=1
 
 RUN uv pip install comfy-cli && \
     comfy --skip-prompt --workspace=/app/comfy install --nvidia --version $VERSION --fast-deps && \
-    uv pip uninstall torch torchvision torchaudio && \
-    uv pip install torch torchvision torchaudio xformers --force-reinstall --index-url https://download.pytorch.org/whl/${TORCH_CUDA}
+    uv pip uninstall torch torchvision torchaudio xformers && \
+    uv pip install torch torchvision torchaudio --force-reinstall --index-url https://download.pytorch.org/whl/${TORCH_CUDA}
 
 RUN echo "Using ${TORCH_CUDA}" && \
     uv pip install --upgrade pip wheel setuptools && \
@@ -112,20 +112,20 @@ RUN git clone --recursive https://github.com/NVlabs/nvdiffrast.git && \
     python setup.py bdist_wheel && \
     cp dist/*.whl /wheels/
 
-RUN printf "scipy==1.16.1\nnumpy<2\n" > /req-constraints.txt
+# RUN printf "scipy==1.16.1\nnumpy<2\n" > /req-constraints.txt
 
 RUN git clone --recursive https://github.com/kijai/ComfyUI-Hunyuan3DWrapper.git && \
     uv pip install pybind11==2.13.6 && \ 
-    pip wheel -r ComfyUI-Hunyuan3DWrapper/requirements.txt -c /req-constraints.txt -w /wheels && \
-    pip wheel ./ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/custom_rasterizer -c /req-constraints.txt -w /wheels --no-build-isolation && \
-    pip wheel ./ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/differentiable_renderer -c /req-constraints.txt -w /wheels --no-build-isolation
+    pip wheel -r ComfyUI-Hunyuan3DWrapper/requirements.txt -w /wheels --no-build-isolation && \
+    pip wheel ./ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/custom_rasterizer -w /wheels --no-build-isolation && \
+    pip wheel ./ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/differentiable_renderer -w /wheels --no-build-isolation
 
 
 ENV MAX_JOBS=4
 ENV TORCH_CUDA_ARCH_LIST="6.1;7.0;7.5;8.0;8.6;8.9;9.0;12.0"
 
 # build flash-attn
-# RUN pip wheel flash-attn==2.8.2 -w /wheels --no-build-isolation --no-deps
+RUN pip wheel flash-attn==2.8.2 -w /wheels --no-build-isolation --no-deps
 
 
 ENV SPCONV_DISABLE_JIT="1"
@@ -317,7 +317,7 @@ RUN uv pip uninstall xformers
 RUN --mount=from=wheel-builder,source=/wheels,target=/mnt/wheels,ro \
     --mount=type=cache,target=/root/.cache/pip \
     uv pip install --no-index --find-links=/mnt/wheels --only-binary=:all: --no-deps \
-      diff_gaussian_rasterization  pytorch3d torch_scatter nvdiffrast mesh_processor custom_rasterizer nvdiffrast cumm_cu128 spconv_cu128 xformers
+      diff_gaussian_rasterization  pytorch3d torch_scatter nvdiffrast mesh_processor custom_rasterizer nvdiffrast cumm_cu128 spconv_cu128 flash_attn xformers
 
 
 RUN chmod a+x /app/utils/init.sh
