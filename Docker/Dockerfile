@@ -53,7 +53,7 @@ RUN wget -q https://github.com/astral-sh/uv/releases/latest/download/uv-x86_64-u
     cp uv-extract/uv-x86_64-unknown-linux-gnu/uvx /usr/local/bin/uvx && \
     chmod +x /usr/local/bin/uv /usr/local/bin/uvx && rm -rf uv-extract *.tar.gz
 
-ARG TORCH_CUDA=cu126
+ARG TORCH_CUDA=cu128
 # Optional: copy constraints
 COPY ./constraints.txt /tmp/constraints.txt
 ENV PIP_CONSTRAINT=/tmp/constraints.txt
@@ -61,8 +61,9 @@ ENV UV_NO_CACHE=1
 ENV PIP_NO_CACHE_DIR=1
 
 RUN uv pip install comfy-cli && \
-    comfy --skip-prompt --workspace=/app/comfy install --nvidia --version $VERSION --fast-deps
-
+    comfy --skip-prompt --workspace=/app/comfy install --nvidia --version $VERSION --fast-deps && \
+    uv pip uninstall torch torchvision torchaudio && \
+    uv pip install torch torchvision torchaudio xformers --force-reinstall --index-url https://download.pytorch.org/whl/${TORCH_CUDA}
 
 RUN echo "Using ${TORCH_CUDA}" && \
     uv pip install --upgrade pip wheel setuptools && \
@@ -124,25 +125,44 @@ ENV MAX_JOBS=4
 ENV TORCH_CUDA_ARCH_LIST="6.1;7.0;7.5;8.0;8.6;8.9;9.0;12.0"
 
 # build flash-attn
-RUN pip wheel flash-attn==2.8.2 -w /wheels --no-build-isolation --no-deps
+# RUN pip wheel flash-attn==2.8.2 -w /wheels --no-build-isolation --no-deps
 
 
 ENV SPCONV_DISABLE_JIT="1"
-ENV CUMM_CUDA_ARCH_LIST="6.1;7.0;7.5;8.0;8.6;8.9;9.0"
+ENV CUMM_CUDA_ARCH_LIST="6.1;7.0;7.5;8.0;8.6;8.9;9.0;12.0"
 
-ENV CUMM_CUDA_VERSION="12.6"
+ENV CUMM_CUDA_VERSION="12.8"
+# ENV CUMM_DISABLE_JIT="1"
 
 # Build CUMM as a wheel (a dep for spconv)
-# RUN git clone -b v0.7.11 https://github.com/FindDefinition/cumm.git && \
-#     cd cumm && \
-#     uv pip install -e . &&\
-#     python setup.py bdist_wheel && \
-#     cp dist/*.whl /wheels/
+COPY ./cumm_cuda_arch.patch /tmp/cumm_cuda_arch.patch
+RUN git clone -b v0.7.13 https://github.com/FindDefinition/cumm.git && \
+    cd cumm && \
+    # Apply the CUDA architecture patch
+    patch -p1 < /tmp/cumm_cuda_arch.patch && \
+    echo "Applied CUDA architecture patch successfully" && \
+    uv pip install -e . &&\
+    python setup.py bdist_wheel && \
+    cp dist/*.whl /wheels/
 
  
 RUN git clone https://github.com/traveller59/spconv && \
-    uv pip install pccm==0.4.16 cumm==0.8.2 && \
+    cd spconv && \
+    sed -i 's/cumm-cu{}>=0.7.11, <0.8.0/cumm-cu{}>=0.7.11, <0.9.0/g' setup.py && \
+    sed -i 's/cumm>=0.7.11, <0.8.0/cumm>=0.7.11, <0.9.0/g' setup.py && \
+    cd .. && \
+    uv pip install --no-index --find-links=/wheels --only-binary=:all: --no-deps \
+     cumm_cu128 && \
+    # uv pip show cumm_cu128 && \
+    uv pip install pccm==0.4.16 && \
     pip wheel ./spconv -w /wheels --no-build-isolation 
+
+# build xformers without flash attention
+ENV XFORMERS_DISABLE_FLASH_ATTN=1
+RUN pip wheel git+https://github.com/facebookresearch/xformers.git@v0.0.32.post2 \
+      -w /wheels \
+      --no-build-isolation
+
 
 # ---------- Stage 3b: install wheels  ----------
 FROM venv-builder AS native-builder
@@ -162,12 +182,17 @@ ENV TORCH_CUDA_ARCH_LIST="6.1;7.0;7.5;8.0;8.6;8.9;9.0;12.0"
 ENV TORCH_EXTENSIONS_DIR=/app/.venv/torch_extensions 
 RUN mkdir -p ${TORCH_EXTENSIONS_DIR}
 
+# build xformers without flash attention
+
+
+
 
 # Copy and install pre-built wheels
-RUN --mount=from=wheel-builder,source=/wheels,target=/mnt/wheels,ro \
-    --mount=type=cache,target=/root/.cache/pip \
-    uv pip install --no-index --find-links=/mnt/wheels --only-binary=:all: --no-deps \
-      diff_gaussian_rasterization  pytorch3d torch_scatter nvdiffrast mesh_processor custom_rasterizer nvdiffrast spconv_cu126 flash-attn 
+# RUN --mount=from=wheel-builder,source=/wheels,target=/mnt/wheels,ro \
+#     --mount=type=cache,target=/root/.cache/pip \
+#     uv pip install --no-index --find-links=/mnt/wheels --only-binary=:all: --no-deps \
+#       diff_gaussian_rasterization  pytorch3d torch_scatter nvdiffrast mesh_processor custom_rasterizer nvdiffrast spconv_cu128 flash-attn 
+
 
 
 # ---------- Stage 4: ComfyUI + nodes ----------
@@ -194,7 +219,7 @@ RUN uv pip install diso==0.1.4 --no-build-isolation
 FROM nvidia/cuda:12.8.1-cudnn-runtime-ubuntu24.04 AS final
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libgl1 libegl1 cuda-minimal-build-12-8 libcusparse-dev-12-8 libcublas-dev-12-8 libcusolver-dev-12-8 wget curl git \
+    libgl1 libegl1 libopengl0 libglu1-mesa cuda-minimal-build-12-8 libcusparse-dev-12-8 libcublas-dev-12-8 libcusolver-dev-12-8 wget curl git \
     && apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
 
@@ -227,9 +252,10 @@ ENV PYOPENGL_PLATFORM=egl
 ENV FORCE_CUDA="1"
 ENV CUDA_HOME="/usr/local/cuda"
 ENV LD_LIBRARY_PATH="/usr/local/lib:/usr/lib/x86_64-linux-gnu:/usr/local/cuda/lib64:/usr/local/cuda/targets/x86_64-linux/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+# Prevent spconv from switching algorithms at runtime
 
 ENV TORCH_CUDA_ARCH_LIST="6.1;7.0;7.5;8.0;8.6;8.9;9.0;12.0"
-ARG TORCH_CUDA=cu126
+ARG TORCH_CUDA=cu128
 ENV TORCH_CUDA=${TORCH_CUDA}
 
 # Version arguments for ComfyUI
@@ -259,7 +285,10 @@ RUN python /app/utils/node_install.py https://github.com/michaelgold/ComfyUI-HF-
 
 RUN python /app/utils/node_install.py https://github.com/lquesada/ComfyUI-Inpaint-CropAndStitch --version b432b2411cbb7d3192d35953bd3aafea05a0e245
 
-RUN python /app/utils/node_install.py https://github.com/MrForExample/ComfyUI-3D-Pack --version 9ab02eb440b98cf7dea0c2de9379f45d99d160d5 --no-build-isolation
+RUN python /app/utils/node_install.py https://github.com/MrForExample/ComfyUI-3D-Pack --version 9ab02eb440b98cf7dea0c2de9379f45d99d160d5 --no-build-isolation && \
+uv pip uninstall cumm-cu126 spconv_cu126 utils3d && \
+uv pip install git+https://github.com/EasternJournalist/utils3d.git@9a4eb15e4021b67b12c460c7057d642626897ec8
+
 
 RUN python /app/utils/node_install.py https://github.com/cubiq/ComfyUI_essentials --version cb5c69c5715230ff6cc1402ddbb5a59473e23202 
 
@@ -283,9 +312,18 @@ RUN if [ "$VERSION" != "$UPDATE_VERSION" ] && [ -n "$UPDATE_VERSION" ]; then \
     else \
         echo "No update needed, VERSION=$VERSION UPDATE_VERSION=$UPDATE_VERSION"; \
     fi
+RUN uv pip uninstall xformers
+
+RUN --mount=from=wheel-builder,source=/wheels,target=/mnt/wheels,ro \
+    --mount=type=cache,target=/root/.cache/pip \
+    uv pip install --no-index --find-links=/mnt/wheels --only-binary=:all: --no-deps \
+      diff_gaussian_rasterization  pytorch3d torch_scatter nvdiffrast mesh_processor custom_rasterizer nvdiffrast cumm_cu128 spconv_cu128 xformers
+
 
 RUN chmod a+x /app/utils/init.sh
 
+# ENV CUDA_LAUNCH_BLOCKING=1
+# ENV TORCH_SHOW_CPP_STACKTRACES=1
 
 EXPOSE 8188
 ENTRYPOINT ["/app/utils/init.sh"]
