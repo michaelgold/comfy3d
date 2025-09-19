@@ -214,6 +214,43 @@ RUN uv pip install -r /app/requirements.txt
 # install diso dependency for comfy3dpack
 RUN uv pip install diso==0.1.4 --no-build-isolation 
 
+# Install version-locked comfy nodes
+COPY ./utils /app/utils 
+WORKDIR /app/comfy
+
+RUN python /app/utils/node_install.py  https://github.com/rgthree/rgthree-comfy --version c5ffa43de4ddb17244626a65a30700a05dd6b67d 
+
+RUN python /app/utils/node_install.py https://github.com/kijai/ComfyUI-KJNodes --version 9ea455afd61cc3814bbf8deb5e7e387336872466
+
+RUN python /app/utils/node_install.py https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite --version 8e4d79471bf1952154768e8435a9300077b534fa
+
+RUN python /app/utils/node_install.py https://github.com/kijai/ComfyUI-DepthAnythingV2 --version 047a4ecfd09a951944154c7f3e823566e586c2d5
+
+RUN python /app/utils/node_install.py https://github.com/kijai/ComfyUI-WanVideoWrapper --version 2c854c53ee8c078069d9b95bf493bb44b25039ee
+
+RUN python /app/utils/node_install.py https://github.com/Acly/comfyui-inpaint-nodes --version b9039c22de926919f26b7242cfa4da00d8b6fbec
+
+RUN python /app/utils/node_install.py https://github.com/michaelgold/ComfyUI-HF-Model-Downloader --version e53962b646b7c05931d57873771611e52b8b1428
+
+RUN python /app/utils/node_install.py https://github.com/lquesada/ComfyUI-Inpaint-CropAndStitch --version b432b2411cbb7d3192d35953bd3aafea05a0e245
+
+RUN python /app/utils/node_install.py https://github.com/MrForExample/ComfyUI-3D-Pack --version 9ab02eb440b98cf7dea0c2de9379f45d99d160d5 --no-build-isolation && \
+uv pip uninstall cumm-cu126 spconv_cu126 utils3d && \
+uv pip install git+https://github.com/EasternJournalist/utils3d.git@9a4eb15e4021b67b12c460c7057d642626897ec8
+
+
+RUN python /app/utils/node_install.py https://github.com/cubiq/ComfyUI_essentials --version cb5c69c5715230ff6cc1402ddbb5a59473e23202 
+
+RUN python /app/utils/node_install.py https://github.com/kijai/ComfyUI-Hunyuan3DWrapper --version 4a87c71089c5d5175035bc6f0de2a586d1fd2a08 
+
+RUN uv pip uninstall xformers
+
+RUN --mount=from=wheel-builder,source=/wheels,target=/mnt/wheels,ro \
+    --mount=type=cache,target=/root/.cache/pip \
+    uv pip install --no-index --find-links=/mnt/wheels --only-binary=:all: --no-deps \
+      diff_gaussian_rasterization  pytorch3d torch_scatter nvdiffrast mesh_processor custom_rasterizer nvdiffrast cumm_cu128 spconv_cu128 flash_attn xformers
+
+
 
 # ---------- Stage 5: final runtime ----------
 FROM nvidia/cuda:12.8.1-cudnn-runtime-ubuntu24.04 AS final
@@ -264,35 +301,7 @@ ARG UPDATE_VERSION=v0.3.52
 ENV VERSION=${VERSION}
 ENV UPDATE_VERSION=${UPDATE_VERSION}
 
-COPY ./utils /app/utils 
 
-# Install version-locked comfy nodes
-WORKDIR /app/comfy
-
-RUN python /app/utils/node_install.py  https://github.com/rgthree/rgthree-comfy --version c5ffa43de4ddb17244626a65a30700a05dd6b67d 
-
-RUN python /app/utils/node_install.py https://github.com/kijai/ComfyUI-KJNodes --version 9ea455afd61cc3814bbf8deb5e7e387336872466
-
-RUN python /app/utils/node_install.py https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite --version 8e4d79471bf1952154768e8435a9300077b534fa
-
-RUN python /app/utils/node_install.py https://github.com/kijai/ComfyUI-DepthAnythingV2 --version 047a4ecfd09a951944154c7f3e823566e586c2d5
-
-RUN python /app/utils/node_install.py https://github.com/kijai/ComfyUI-WanVideoWrapper --version 2c854c53ee8c078069d9b95bf493bb44b25039ee
-
-RUN python /app/utils/node_install.py https://github.com/Acly/comfyui-inpaint-nodes --version b9039c22de926919f26b7242cfa4da00d8b6fbec
-
-RUN python /app/utils/node_install.py https://github.com/michaelgold/ComfyUI-HF-Model-Downloader --version e53962b646b7c05931d57873771611e52b8b1428
-
-RUN python /app/utils/node_install.py https://github.com/lquesada/ComfyUI-Inpaint-CropAndStitch --version b432b2411cbb7d3192d35953bd3aafea05a0e245
-
-RUN python /app/utils/node_install.py https://github.com/MrForExample/ComfyUI-3D-Pack --version 9ab02eb440b98cf7dea0c2de9379f45d99d160d5 --no-build-isolation && \
-uv pip uninstall cumm-cu126 spconv_cu126 utils3d && \
-uv pip install git+https://github.com/EasternJournalist/utils3d.git@9a4eb15e4021b67b12c460c7057d642626897ec8
-
-
-RUN python /app/utils/node_install.py https://github.com/cubiq/ComfyUI_essentials --version cb5c69c5715230ff6cc1402ddbb5a59473e23202 
-
-RUN python /app/utils/node_install.py https://github.com/kijai/ComfyUI-Hunyuan3DWrapper --version 4a87c71089c5d5175035bc6f0de2a586d1fd2a08 
 
 # Set workspace and install nodes with non-interactive flags
 WORKDIR /app/comfy
@@ -312,12 +321,6 @@ RUN if [ "$VERSION" != "$UPDATE_VERSION" ] && [ -n "$UPDATE_VERSION" ]; then \
     else \
         echo "No update needed, VERSION=$VERSION UPDATE_VERSION=$UPDATE_VERSION"; \
     fi
-RUN uv pip uninstall xformers
-
-RUN --mount=from=wheel-builder,source=/wheels,target=/mnt/wheels,ro \
-    --mount=type=cache,target=/root/.cache/pip \
-    uv pip install --no-index --find-links=/mnt/wheels --only-binary=:all: --no-deps \
-      diff_gaussian_rasterization  pytorch3d torch_scatter nvdiffrast mesh_processor custom_rasterizer nvdiffrast cumm_cu128 spconv_cu128 flash_attn xformers
 
 
 RUN chmod a+x /app/utils/init.sh
