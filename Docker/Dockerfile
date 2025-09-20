@@ -56,6 +56,7 @@ RUN wget -q https://github.com/astral-sh/uv/releases/latest/download/uv-x86_64-u
 ARG TORCH_CUDA=cu128
 # Optional: copy constraints
 COPY ./constraints.txt /tmp/constraints.txt
+ENV UV_CONSTRAINT=/app/constraints.txt
 ENV PIP_CONSTRAINT=/tmp/constraints.txt
 ENV UV_NO_CACHE=1
 ENV PIP_NO_CACHE_DIR=1
