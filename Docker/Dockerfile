@@ -225,7 +225,7 @@ RUN python /app/utils/node_install.py https://github.com/kijai/ComfyUI-KJNodes -
 
 RUN python /app/utils/node_install.py https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite --version 8e4d79471bf1952154768e8435a9300077b534fa
 
-RUN python /app/utils/node_install.py https://github.com/Fannovel16/comfyui_controlnet_aux --version cc6b232f4a47f0cdf70f4e1bfa24b74bd0d75bf1
+RUN python /app/utils/node_install.py https://github.com/Fannovel16/comfyui_controlnet_aux --version cc6b232f4a47f0cdf70f4e1bfa24b74bd0d75bf1 --no-build-isolation 
 
 RUN python /app/utils/node_install.py https://github.com/kijai/ComfyUI-segment-anything-2  --version ebdb9869596b14babdaa83505e6863aad4618501
 
@@ -262,6 +262,10 @@ FROM nvidia/cuda:12.8.1-cudnn-runtime-ubuntu24.04 AS final
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1 libegl1 libopengl0 libglu1-mesa cuda-minimal-build-12-8 libcusparse-dev-12-8 libcublas-dev-12-8 libcusolver-dev-12-8 wget curl git \
+    libglib2.0-0 libglib2.0-dev libgthread-2.0-0 \
+    libtbbmalloc2 \
+   libvorbis-dev libtheora-dev   libjpeg-dev libpng-dev libtiff-dev \
+    
     && apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
 
