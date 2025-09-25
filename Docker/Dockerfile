@@ -219,7 +219,7 @@ RUN uv pip install diso==0.1.4 --no-build-isolation
 COPY ./utils /app/utils 
 WORKDIR /app/comfy
 
-RUN python /app/utils/node_install.py  https://github.com/rgthree/rgthree-comfy --version c5ffa43de4ddb17244626a65a30700a05dd6b67d 
+RUN python /app/utils/node_install.py  https://github.com/rgthree/rgthree-comfy --version 0fb1e239a903e93ef626a8c20589b38f46e39dff 
 
 RUN python /app/utils/node_install.py https://github.com/kijai/ComfyUI-KJNodes --version 9d7af919b91838fb22e31ad0107a6ddcf8bd7f3f
 
