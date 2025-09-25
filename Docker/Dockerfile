@@ -221,7 +221,7 @@ WORKDIR /app/comfy
 
 RUN python /app/utils/node_install.py  https://github.com/rgthree/rgthree-comfy --version c5ffa43de4ddb17244626a65a30700a05dd6b67d 
 
-RUN python /app/utils/node_install.py https://github.com/kijai/ComfyUI-KJNodes --version 9ea455afd61cc3814bbf8deb5e7e387336872466
+RUN python /app/utils/node_install.py https://github.com/kijai/ComfyUI-KJNodes --version 9d7af919b91838fb22e31ad0107a6ddcf8bd7f3f
 
 RUN python /app/utils/node_install.py https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite --version 8e4d79471bf1952154768e8435a9300077b534fa
 
