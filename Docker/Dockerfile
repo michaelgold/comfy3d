@@ -215,6 +215,9 @@ RUN uv pip install -r /app/requirements.txt
 # install diso dependency for comfy3dpack
 RUN uv pip install diso==0.1.4 --no-build-isolation 
 
+# install onnx gpu runtime
+RUN uv pip install onnxruntime-gpu==1.22.0 --no-build-isolation
+
 # Install version-locked comfy nodes
 COPY ./utils /app/utils 
 WORKDIR /app/comfy
