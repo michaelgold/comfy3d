@@ -225,6 +225,8 @@ RUN python /app/utils/node_install.py https://github.com/kijai/ComfyUI-KJNodes -
 
 RUN python /app/utils/node_install.py https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite --version 8e4d79471bf1952154768e8435a9300077b534fa
 
+RUN python /app/utils/node_install.py https://github.com/Fannovel16/comfyui_controlnet_aux --version cc6b232f4a47f0cdf70f4e1bfa24b74bd0d75bf1
+
 RUN python /app/utils/node_install.py https://github.com/kijai/ComfyUI-DepthAnythingV2 --version 047a4ecfd09a951944154c7f3e823566e586c2d5
 
 RUN python /app/utils/node_install.py https://github.com/kijai/ComfyUI-WanVideoWrapper --version 2c854c53ee8c078069d9b95bf493bb44b25039ee
