@@ -199,7 +199,7 @@ RUN mkdir -p ${TORCH_EXTENSIONS_DIR}
 # ---------- Stage 4: ComfyUI + nodes ----------
 FROM native-builder AS comfy-builder
 
-RUN apt-get update && apt-get install -y --no-install-recommends 
+RUN apt-get update && apt-get install -y --no-install-recommends \
     pkg-config libcairo2-dev && \ 
     apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
