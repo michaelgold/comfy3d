@@ -242,7 +242,7 @@ RUN python /app/utils/node_install.py https://github.com/kijai/ComfyUI-WanVideoW
 
 RUN python /app/utils/node_install.py https://github.com/Acly/comfyui-inpaint-nodes --version b9039c22de926919f26b7242cfa4da00d8b6fbec
 
-RUN python /app/utils/node_install.py https://github.com/michaelgold/ComfyUI-HF-Model-Downloader --version 03fd25cbed98a55effbbdc345919ea3186356bf6
+RUN python /app/utils/node_install.py https://github.com/michaelgold/ComfyUI-HF-Model-Downloader --version a6bc77da07b99b8791a52d9a2f1a28d1eea1f00d
 
 RUN python /app/utils/node_install.py https://github.com/lquesada/ComfyUI-Inpaint-CropAndStitch --version b432b2411cbb7d3192d35953bd3aafea05a0e245
 
@@ -313,7 +313,7 @@ ENV TORCH_CUDA=${TORCH_CUDA}
 
 # Version arguments for ComfyUI
 ARG VERSION=v0.3.59
-ARG UPDATE_VERSION=v0.3.59
+ARG UPDATE_VERSION=v0.3.62
 ENV VERSION=${VERSION}
 ENV UPDATE_VERSION=${UPDATE_VERSION}
 
