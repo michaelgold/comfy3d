@@ -272,7 +272,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libglib2.0-0 libglib2.0-dev libgthread-2.0-0 \
     libtbbmalloc2 \
    libvorbis-dev libtheora-dev   libjpeg-dev libpng-dev libtiff-dev \
-    
     && apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
 
