@@ -1,3 +1,2 @@
-xformers==0.0.32.post2 
 pyhocon==0.3.61 
 plotly==6.3.0
