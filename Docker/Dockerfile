@@ -44,7 +44,7 @@ RUN ldconfig
 ENV VIRTUAL_ENV=/app/.venv
 RUN python -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-ARG VERSION=v0.3.50
+ARG VERSION=v0.3.62
 
 # Install uv
 RUN wget -q https://github.com/astral-sh/uv/releases/latest/download/uv-x86_64-unknown-linux-gnu.tar.gz && \
@@ -311,7 +311,7 @@ ARG TORCH_CUDA=cu128
 ENV TORCH_CUDA=${TORCH_CUDA}
 
 # Version arguments for ComfyUI
-ARG VERSION=v0.3.59
+ARG VERSION=v0.3.62
 ARG UPDATE_VERSION=v0.3.62
 ENV VERSION=${VERSION}
 ENV UPDATE_VERSION=${UPDATE_VERSION}

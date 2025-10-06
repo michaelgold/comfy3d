@@ -14,7 +14,7 @@ on:
       version:
         description: ComfyUI Version
         required: false
-        default: v0.3.59
+        default: v0.3.62
 
 jobs:
   check-comfyui-version:
