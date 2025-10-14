@@ -262,7 +262,7 @@ RUN --mount=from=wheel-builder,source=/wheels,target=/mnt/wheels,ro \
     uv pip install --no-index --find-links=/mnt/wheels --only-binary=:all: --no-deps \
       diff_gaussian_rasterization  pytorch3d torch_scatter nvdiffrast mesh_processor custom_rasterizer nvdiffrast cumm_cu128 spconv_cu128 flash_attn xformers
 
-RUN uv pip install diffusers<0.35
+RUN uv pip install diffusers==0.34.0
 
 # ---------- Stage 5: final runtime ----------
 FROM nvidia/cuda:12.8.1-cudnn-runtime-ubuntu24.04 AS final
