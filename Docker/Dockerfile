@@ -93,7 +93,7 @@ RUN git clone --recursive https://github.com/ashawkey/diff-gaussian-rasterizatio
     python setup.py bdist_wheel && \
     cp dist/*.whl /wheels/
 
-RUN git clone --recursive https://github.com/ashawkey/kiuikit.git && \
+RUN git clone -b v0.2.20  --recursive https://github.com/ashawkey/kiuikit.git && \
     cd kiuikit && \
     python setup.py bdist_wheel && \
     cp dist/*.whl /wheels/
