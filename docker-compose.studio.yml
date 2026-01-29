@@ -1,6 +1,6 @@
 services:
   comfy3d:
-    image: michaelgold/comfy3d:v0.3.66-cuda12.8
+    image: michaelgold/comfy3d:v0.10.0-cuda12.8
     container_name: comfy3d-studio
     shm_size: 16gb
     ports:
