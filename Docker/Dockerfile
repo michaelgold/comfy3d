@@ -242,7 +242,7 @@ RUN python /app/utils/node_install.py https://github.com/kijai/ComfyUI-WanVideoW
 
 RUN python /app/utils/node_install.py https://github.com/Acly/comfyui-inpaint-nodes --version b9039c22de926919f26b7242cfa4da00d8b6fbec
 
-RUN python /app/utils/node_install.py https://github.com/michaelgold/ComfyUI-HF-Model-Downloader --version 997c34e2e42e03aa68566ba7964a8a1683f0d2d3
+RUN python /app/utils/node_install.py https://github.com/michaelgold/ComfyUI-HF-Model-Downloader --version 783a88c67f488afbcb12fe6b0cf94c5253f84ccc
 
 RUN python /app/utils/node_install.py https://github.com/lquesada/ComfyUI-Inpaint-CropAndStitch --version b432b2411cbb7d3192d35953bd3aafea05a0e245
 
