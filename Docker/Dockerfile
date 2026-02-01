@@ -255,6 +255,8 @@ RUN python /app/utils/node_install.py https://github.com/cubiq/ComfyUI_essential
 
 RUN python /app/utils/node_install.py https://github.com/kijai/ComfyUI-Hunyuan3DWrapper --version 4a87c71089c5d5175035bc6f0de2a586d1fd2a08 
 
+RUN python /app/utils/node_install.py https://github.com/calcuis/gguf --version e802c7831507af49eefa40324eb78378eec4f3cf
+
 RUN uv pip uninstall xformers
 
 RUN --mount=from=wheel-builder,source=/wheels,target=/mnt/wheels,ro \
