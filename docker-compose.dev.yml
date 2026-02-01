@@ -16,9 +16,7 @@ services:
       - comfyui-u2net:/root/.u2net
       - .:/workspace
     gpus: all
-
-    devices:
-      - nvidia.com/gpu=all
+    runtime: nvidia
 
 
 volumes:

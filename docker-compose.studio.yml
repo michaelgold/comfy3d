@@ -1,6 +1,7 @@
 services:
   comfy3d:
-    image: michaelgold/comfy3d:v0.10.0-cuda12.8
+    image: michaelgold/comfy3d:v0.11.1-cuda12.8
+
     container_name: comfy3d-studio
     shm_size: 16gb
     ports:
@@ -14,6 +15,7 @@ services:
       - comfyui-manager:/app/comfy/user/default/ComfyUI-Manager
       - comfyui-u2net:/root/.u2net
       - .:/workspace
+    runtime: nvidia
     gpus: all
 
 
