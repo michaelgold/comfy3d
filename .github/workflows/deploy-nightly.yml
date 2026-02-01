@@ -31,7 +31,7 @@ jobs:
         run: |
           # Remove existing container if it exists
           docker rm -f comfy-test || true
-          docker run -d -p 8234:8188 --name comfy-test --gpus all michaelgold/comfy3d:nightly
+          docker run -d -p 8234:8188 --name comfy-test --runtime=nvidia --gpus all michaelgold/comfy3d:nightly
           sleep 150
           docker logs comfy-test > logs.txt
           cat logs.txt
