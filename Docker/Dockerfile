@@ -277,6 +277,9 @@ RUN --mount=from=wheel-builder,source=/wheels,target=/mnt/wheels,ro \
 # fix for older nodes     
 RUN uv pip install diffusers==0.34.0 transformers==4.56.0
 
+# install bpy
+RUN uv pip install --extra-index-url https://michaelgold.github.io/buildbpy/ bpy==5.0.1
+
 
 # ---------- Stage 5: final runtime ----------
 FROM nvidia/cuda:12.8.1-cudnn-runtime-ubuntu24.04 AS final
@@ -286,6 +289,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libglib2.0-0 libglib2.0-dev libgthread-2.0-0 \
     libtbbmalloc2 \
    libvorbis-dev libtheora-dev   libjpeg-dev libpng-dev libtiff-dev \
+   libxfixes3 libxi6 libxrender1 libxkbcommon0 libsm6 libxext6 \
     && apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
 
