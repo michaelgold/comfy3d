@@ -164,6 +164,11 @@ RUN pip wheel git+https://github.com/facebookresearch/xformers.git@v0.0.32.post2
       -w /wheels \
       --no-build-isolation
 
+RUN git clone --recursive https://github.com/rusty1s/pytorch_cluster.git && \
+    cd pytorch_cluster && \
+    python setup.py bdist_wheel && \
+    cp dist/*.whl /wheels/
+
 
 # ---------- Stage 3b: install wheels  ----------
 FROM venv-builder AS native-builder
@@ -257,12 +262,17 @@ RUN python /app/utils/node_install.py https://github.com/kijai/ComfyUI-Hunyuan3D
 
 RUN python /app/utils/node_install.py https://github.com/calcuis/gguf --version e802c7831507af49eefa40324eb78378eec4f3cf
 
+
+RUN python /app/utils/node_install.py https://github.com/PozzettiAndrea/ComfyUI-UniRig --version dcd4cc438799f04915a030404046913b38018e4a --no-build-isolation
+
+RUN python /app/utils/node_install.py https://github.com/PozzettiAndrea/ComfyUI-GeometryPack --version 35e72ac8c94587f29df8bee9bffbbe517ee1cc4a --no-build-isolation
+
 RUN uv pip uninstall xformers
 
 RUN --mount=from=wheel-builder,source=/wheels,target=/mnt/wheels,ro \
     --mount=type=cache,target=/root/.cache/pip \
     uv pip install --no-index --find-links=/mnt/wheels --only-binary=:all: --no-deps \
-      diff_gaussian_rasterization  pytorch3d torch_scatter nvdiffrast mesh_processor custom_rasterizer nvdiffrast cumm_cu128 spconv_cu128 flash_attn xformers
+      diff_gaussian_rasterization  pytorch3d torch_scatter nvdiffrast mesh_processor custom_rasterizer nvdiffrast cumm_cu128 spconv_cu128 flash_attn xformers torch_cluster
 
 # fix for older nodes     
 RUN uv pip install diffusers==0.34.0 transformers==4.56.0
