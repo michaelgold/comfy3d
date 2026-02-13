@@ -263,9 +263,9 @@ RUN python /app/utils/node_install.py https://github.com/kijai/ComfyUI-Hunyuan3D
 RUN python /app/utils/node_install.py https://github.com/calcuis/gguf --version e802c7831507af49eefa40324eb78378eec4f3cf
 
 
-RUN python /app/utils/node_install.py https://github.com/PozzettiAndrea/ComfyUI-UniRig --version dcd4cc438799f04915a030404046913b38018e4a --no-build-isolation
+RUN python /app/utils/node_install.py https://github.com/PozzettiAndrea/ComfyUI-UniRig --version e47bb9f7334299a8f03d27b01bde062e6c31299b --no-build-isolation
 
-RUN python /app/utils/node_install.py https://github.com/PozzettiAndrea/ComfyUI-GeometryPack --version 35e72ac8c94587f29df8bee9bffbbe517ee1cc4a --no-build-isolation
+RUN python /app/utils/node_install.py https://github.com/PozzettiAndrea/ComfyUI-GeometryPack --version 6d4a9e1c3ce6d037e6576cb06e1d26e45d245ad2 --no-build-isolation
 
 RUN uv pip uninstall xformers
 
