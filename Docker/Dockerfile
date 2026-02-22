@@ -170,8 +170,10 @@ RUN git clone --recursive https://github.com/rusty1s/pytorch_cluster.git && \
     cp dist/*.whl /wheels/
 
 # Build CuMesh - CUDA mesh operations
-RUN git clone --recursive https://github.com/visualbruno/CuMesh && \
+RUN apt-get update && apt-get install -y libeigen3-dev && \
+    git clone --recursive https://github.com/visualbruno/CuMesh && \
     cd CuMesh && \
+    git submodule update --init --recursive && \
     python setup.py bdist_wheel && \
     cp dist/*.whl /wheels/
 
