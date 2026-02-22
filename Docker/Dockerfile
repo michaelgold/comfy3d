@@ -169,6 +169,30 @@ RUN git clone --recursive https://github.com/rusty1s/pytorch_cluster.git && \
     python setup.py bdist_wheel && \
     cp dist/*.whl /wheels/
 
+# Build CuMesh - CUDA mesh operations
+RUN git clone --recursive https://github.com/JeffreyXiang/CuMesh.git && \
+    cd CuMesh && \
+    python setup.py bdist_wheel && \
+    cp dist/*.whl /wheels/
+
+# Build FlexGEMM - Flexible GEMM operations
+RUN git clone --recursive https://github.com/JeffreyXiang/FlexGEMM.git && \
+    cd FlexGEMM && \
+    python setup.py bdist_wheel && \
+    cp dist/*.whl /wheels/
+
+# Build nvdiffrec_render - NVIDIA differentiable reconstruction renderer
+RUN git clone --recursive https://github.com/NVlabs/nvdiffrec.git && \
+    cd nvdiffrec && \
+    python setup.py bdist_wheel && \
+    cp dist/*.whl /wheels/
+
+# Build o_voxel - octree/voxel operations for TRELLIS
+RUN git clone --recursive https://github.com/microsoft/TRELLIS.2.git && \
+    cd TRELLIS.2/o-voxel && \
+    python setup.py bdist_wheel && \
+    cp dist/*.whl /wheels/
+
 
 # ---------- Stage 3b: install wheels  ----------
 FROM venv-builder AS native-builder
@@ -267,18 +291,21 @@ RUN python /app/utils/node_install.py https://github.com/PozzettiAndrea/ComfyUI-
 
 RUN python /app/utils/node_install.py https://github.com/PozzettiAndrea/ComfyUI-GeometryPack --version 6d4a9e1c3ce6d037e6576cb06e1d26e45d245ad2 --no-build-isolation
 
+RUN python /app/utils/node_install.py https://github.com/visualbruno/ComfyUI-Trellis2 --version 3c7e46b265c1e28f523889ad24d65708cdeee7f8 --no-build-isolation
+
 RUN uv pip uninstall xformers
 
 RUN --mount=from=wheel-builder,source=/wheels,target=/mnt/wheels,ro \
     --mount=type=cache,target=/root/.cache/pip \
     uv pip install --no-index --find-links=/mnt/wheels --only-binary=:all: --no-deps \
-      diff_gaussian_rasterization  pytorch3d torch_scatter nvdiffrast mesh_processor custom_rasterizer nvdiffrast cumm_cu128 spconv_cu128 flash_attn xformers torch_cluster
+      diff_gaussian_rasterization  pytorch3d torch_scatter nvdiffrast mesh_processor custom_rasterizer nvdiffrast cumm_cu128 spconv_cu128 flash_attn xformers torch_cluster cumesh flex_gemm nvdiffrec_render o_voxel
 
 # fix for older nodes     
 RUN uv pip install diffusers==0.34.0 transformers==4.56.0
 
 # install bpy
 RUN uv pip install --extra-index-url https://michaelgold.github.io/buildbpy/ bpy==5.0.1
+
 
 
 # ---------- Stage 5: final runtime ----------
