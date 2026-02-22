@@ -170,7 +170,7 @@ RUN git clone --recursive https://github.com/rusty1s/pytorch_cluster.git && \
     cp dist/*.whl /wheels/
 
 # Build CuMesh - CUDA mesh operations
-RUN git clone --recursive https://github.com/JeffreyXiang/CuMesh.git && \
+RUN git clone --recursive https://github.com/visualbruno/CuMesh && \
     cd CuMesh && \
     python setup.py bdist_wheel && \
     cp dist/*.whl /wheels/
@@ -188,7 +188,7 @@ RUN git clone -b renderutils https://github.com/JeffreyXiang/nvdiffrec.git && \
     cp dist/*.whl /wheels/
 
 # Build o_voxel - octree/voxel operations for TRELLIS
-RUN git clone --recursive https://github.com/microsoft/TRELLIS.2.git && \
+RUN git clone --recursive https://github.com/visualbruno/TRELLIS.2 && \
     cd TRELLIS.2/o-voxel && \
     python setup.py bdist_wheel && \
     cp dist/*.whl /wheels/
