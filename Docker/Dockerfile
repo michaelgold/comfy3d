@@ -182,7 +182,7 @@ RUN git clone --recursive https://github.com/JeffreyXiang/FlexGEMM.git && \
     cp dist/*.whl /wheels/
 
 # Build nvdiffrec_render - NVIDIA differentiable reconstruction renderer
-RUN git clone --recursive https://github.com/NVlabs/nvdiffrec.git && \
+RUN git clone -b renderutils https://github.com/JeffreyXiang/nvdiffrec.git && \
     cd nvdiffrec && \
     python setup.py bdist_wheel && \
     cp dist/*.whl /wheels/
