@@ -299,6 +299,8 @@ RUN python /app/utils/node_install.py https://github.com/visualbruno/ComfyUI-Tre
 
 RUN python /app/utils/node_install.py https://github.com/yolain/ComfyUI-Easy-Use --version b5e31ef12ad9d0b187b545c2707735cc7d581c52
 
+RUN python /app/utils/node_install.py https://github.com/michaelgold/ComfyUI-Blender-Nodes --version 0bb265061d4a75935b641a131ccfebef5ff9261e
+
 RUN uv pip uninstall xformers
 
 RUN --mount=from=wheel-builder,source=/wheels,target=/mnt/wheels,ro \
