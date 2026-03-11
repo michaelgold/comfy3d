@@ -33,7 +33,7 @@ RUN ln -sf /usr/local/bin/python3 /usr/local/bin/python && \
 FROM nvidia/cuda:${CUDA_TAG} AS venv-builder
 # Copy Python runtime from python-builder
 
-RUN apt-get update && apt-get install -y --no-install-recommends curl wget git ca-certificates && \ 
+RUN apt-get update && apt-get install -y --no-install-recommends curl wget git ca-certificates ninja-build && \ 
     apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
 COPY --from=python-builder /usr/local/bin/python* /usr/local/bin/
