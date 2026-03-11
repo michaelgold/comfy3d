@@ -1,6 +1,7 @@
 # ---------- Stage 0: base build tools ----------
 ARG CUDA_TAG=13.0.2-cudnn-devel-ubuntu24.04
 ARG CUDA_RUNTIME_TAG=13.0.2-cudnn-runtime-ubuntu24.04
+ARG CUMM_CUDA_VERSION=13.0
 
 FROM nvidia/cuda:${CUDA_TAG} AS build-base
 
@@ -132,9 +133,9 @@ RUN pip wheel flash-attn==2.8.2 -w /wheels --no-build-isolation --no-deps
 
 
 ENV SPCONV_DISABLE_JIT="1"
-ENV CUMM_CUDA_ARCH_LIST="6.1;7.0;7.5;8.0;8.6;8.9;9.0;12.0"
+ENV CUMM_CUDA_ARCH_LIST="7.5;8.0;8.6;8.9;9.0;12.0"
 
-ENV CUMM_CUDA_VERSION="12.8"
+ENV CUMM_CUDA_VERSION=${CUMM_CUDA_VERSION}
 # ENV CUMM_DISABLE_JIT="1"
 
 # Build CUMM as a wheel (a dep for spconv)
