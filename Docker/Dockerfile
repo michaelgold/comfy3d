@@ -130,10 +130,8 @@ RUN git clone --recursive https://github.com/kijai/ComfyUI-Hunyuan3DWrapper.git 
     git checkout cbe2837e506ffb5942fda754d0f0bccf586363a8 && \
     uv pip install pybind11==2.13.6 && \ 
     # pip wheel -r ComfyUI-Hunyuan3DWrapper/requirements.txt -w /wheels --no-build-isolation --no-deps && \
-    pip wheel ./ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/custom_rasterizer -w /wheels --no-build-isolation --no-deps  && \
-    pip wheel ./ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/differentiable_renderer -w /wheels --no-build-isolation --no-deps 
-
-
+    pip wheel ./hy3dgen/texgen/custom_rasterizer -w /wheels --no-build-isolation --no-deps  && \
+    pip wheel ./hy3dgen/texgen/differentiable_renderer -w /wheels --no-build-isolation --no-deps 
 
 
 # build flash-attn
