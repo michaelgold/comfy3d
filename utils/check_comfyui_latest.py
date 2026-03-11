@@ -45,15 +45,16 @@ def main():
     # Write outputs to $GITHUB_OUTPUT
     github_output = os.getenv('GITHUB_OUTPUT')
     if github_output:
-        # Ensure we always have valid versions
-        base_version = version_info.get('base_version') or latest_tag or 'v0.3.50'
-        # update_version should always be the latest detected, not stored
-        update_version = latest_tag or 'v0.3.50'
+        # Resolve versions from GitHub data (tag preferred, then commit)
+        git_version = latest_tag or latest_commit or ''
+        base_version = version_info.get('base_version') or git_version
+        update_version = git_version
         
         with open(github_output, 'a') as output_file:
             output_file.write(f"new_tag={str(new_tag).lower()}\n")
             output_file.write(f"new_commit={str(new_commit).lower()}\n")
             output_file.write(f"latest_tag={latest_tag or ''}\n")
+            output_file.write(f"latest_commit={latest_commit or ''}\n")
             output_file.write(f"base_version={base_version}\n")
             output_file.write(f"update_version={update_version}\n")
 
