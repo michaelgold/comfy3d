@@ -171,7 +171,7 @@ RUN git clone https://github.com/traveller59/spconv && \
      cumm_${TORCH_CUDA} && \
     # uv pip show cumm_cu128 && \
     uv pip install pccm==0.4.16 && \
-    pip wheel ./spconv -w /wheels --no-build-isolation 
+    pip wheel ./spconv -w /wheels --no-build-isolation --no-deps
 
 # build xformers without flash attention
 ENV XFORMERS_DISABLE_FLASH_ATTN=1
