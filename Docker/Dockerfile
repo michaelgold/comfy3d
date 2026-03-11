@@ -157,15 +157,21 @@ RUN git clone -b v0.7.13 https://github.com/FindDefinition/cumm.git && \
     cp dist/*.whl /wheels/
 
 
+
 arg TORCH_CUDA
 ENV TORCH_CUDA=${TORCH_CUDA}
+
+RUN git clone https://github.com/FindDefinition/cumm && \
+    cd cumm && \
+    pip install -e .
+
 RUN git clone https://github.com/traveller59/spconv && \
     cd spconv && \
     sed -i 's/cumm-cu{}>=0.7.11, <0.8.0/cumm-cu{}>=0.7.11, <0.9.0/g' setup.py && \
     sed -i 's/cumm>=0.7.11, <0.8.0/cumm>=0.7.11, <0.9.0/g' setup.py && \
     cd .. && \
-    uv pip install --no-index --find-links=/wheels --only-binary=:all: --no-deps \
-     cumm_${TORCH_CUDA} && \
+    # uv pip install --no-index --find-links=/wheels --only-binary=:all: --no-deps \
+    #  cumm_${TORCH_CUDA} && \
     # uv pip show cumm_cu128 && \
     uv pip install pccm==0.4.16 && \
     pip wheel ./spconv -w /wheels --no-build-isolation 
