@@ -2,6 +2,7 @@
 ARG CUDA_TAG=13.0.2-cudnn-devel-ubuntu24.04
 ARG CUDA_RUNTIME_TAG=13.0.2-cudnn-runtime-ubuntu24.04
 ARG CUMM_CUDA_VERSION=13.0
+ARG CUDA_ARCH_LIST=${CUDA_ARCH_LIST}
 
 FROM nvidia/cuda:${CUDA_TAG} AS build-base
 
@@ -86,7 +87,7 @@ ENV FORCE_CUDA="1"
 ENV CUDA_HOME="/usr/local/cuda"
 ENV LD_LIBRARY_PATH="/usr/local/lib:/usr/lib/x86_64-linux-gnu:/usr/local/cuda/lib64:/usr/local/cuda/targets/x86_64-linux/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 ENV PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True,garbage_collection_threshold:0.6,max_split_size_mb:128"
-ENV TORCH_CUDA_ARCH_LIST="7.5;8.0;8.6;8.9;9.0;10.0;12.0"
+ENV TORCH_CUDA_ARCH_LIST=${CUDA_ARCH_LIST}
 
 WORKDIR /wheels
 
@@ -126,14 +127,14 @@ RUN git clone --recursive https://github.com/kijai/ComfyUI-Hunyuan3DWrapper.git 
 
 
 ENV MAX_JOBS=4
-ENV TORCH_CUDA_ARCH_LIST="7.5;8.0;8.6;8.9;9.0;12.0"
+ENV TORCH_CUDA_ARCH_LIST=${CUDA_ARCH_LIST}
 
 # build flash-attn
 RUN pip wheel flash-attn==2.8.2 -w /wheels --no-build-isolation --no-deps
 
 
 ENV SPCONV_DISABLE_JIT="1"
-ENV CUMM_CUDA_ARCH_LIST="7.5;8.0;8.6;8.9;9.0;12.0"
+ENV CUMM_CUDA_ARCH_LIST=${CUDA_ARCH_LIST}
 
 ENV CUMM_CUDA_VERSION=${CUMM_CUDA_VERSION}
 # ENV CUMM_DISABLE_JIT="1"
@@ -213,7 +214,7 @@ ENV FORCE_CUDA="1"
 ENV CUDA_HOME="/usr/local/cuda"
 ENV LD_LIBRARY_PATH="/usr/local/lib:/usr/lib/x86_64-linux-gnu:/usr/local/cuda/lib64:/usr/local/cuda/targets/x86_64-linux/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 ENV PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True,garbage_collection_threshold:0.6,max_split_size_mb:128"
-ENV TORCH_CUDA_ARCH_LIST="7.5;8.0;8.6;8.9;9.0;12.0"
+ENV TORCH_CUDA_ARCH_LIST=${CUDA_ARCH_LIST}
 
 
 ENV TORCH_EXTENSIONS_DIR=/app/.venv/torch_extensions 
@@ -362,7 +363,7 @@ ENV CUDA_HOME="/usr/local/cuda"
 ENV LD_LIBRARY_PATH="/usr/local/lib:/usr/lib/x86_64-linux-gnu:/usr/local/cuda/lib64:/usr/local/cuda/targets/x86_64-linux/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 # Prevent spconv from switching algorithms at runtime
 
-ENV TORCH_CUDA_ARCH_LIST="7.5;8.0;8.6;8.9;9.0;12.0"
+ENV TORCH_CUDA_ARCH_LIST=${CUDA_ARCH_LIST}
 ARG TORCH_CUDA=cu130
 ENV TORCH_CUDA=${TORCH_CUDA}
 
