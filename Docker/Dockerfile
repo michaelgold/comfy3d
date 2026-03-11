@@ -1,8 +1,8 @@
 # ---------- Stage 0: base build tools ----------
 ARG CUDA_TAG=13.0.2-cudnn-devel-ubuntu24.04
 ARG CUDA_RUNTIME_TAG=13.0.2-cudnn-runtime-ubuntu24.04
-ARG CUMM_CUDA_VERSION=13.0
-ARG CUDA_ARCH_LIST="7.5;8.0;8.6;8.9;9.0;12.0"
+ENV CUMM_CUDA_VERSION=13.0
+ENV CUDA_ARCH_LIST="7.5;8.0;8.6;8.9;9.0;12.0"
 
 FROM nvidia/cuda:${CUDA_TAG} AS build-base
 
