@@ -1,5 +1,6 @@
 # ---------- Stage 0: base build tools ----------
-ARG CUDA_TAG=12.8.1-cudnn-devel-ubuntu24.04
+ARG CUDA_TAG=13.0.2-cudnn-devel-ubuntu24.04
+
 FROM nvidia/cuda:${CUDA_TAG} AS build-base
 
 ENV DEBIAN_FRONTEND=noninteractive PIP_PREFER_BINARY=1 CMAKE_BUILD_PARALLEL_LEVEL=8
@@ -44,7 +45,7 @@ RUN ldconfig
 ENV VIRTUAL_ENV=/app/.venv
 RUN python -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-ARG VERSION=v0.3.62
+ARG VERSION=v0.16.4
 
 # Install uv
 RUN wget -q https://github.com/astral-sh/uv/releases/latest/download/uv-x86_64-unknown-linux-gnu.tar.gz && \
@@ -53,7 +54,7 @@ RUN wget -q https://github.com/astral-sh/uv/releases/latest/download/uv-x86_64-u
     cp uv-extract/uv-x86_64-unknown-linux-gnu/uvx /usr/local/bin/uvx && \
     chmod +x /usr/local/bin/uv /usr/local/bin/uvx && rm -rf uv-extract *.tar.gz
 
-ARG TORCH_CUDA=cu128
+ARG TORCH_CUDA=cu130
 # Optional: copy constraints
 COPY ./constraints.txt /tmp/constraints.txt
 ENV UV_CONSTRAINT=/tmp/constraints.txt
@@ -317,7 +318,7 @@ RUN uv pip install --extra-index-url https://michaelgold.github.io/buildbpy/ bpy
 
 
 # ---------- Stage 5: final runtime ----------
-FROM nvidia/cuda:12.8.1-cudnn-runtime-ubuntu24.04 AS final
+FROM nvidia/13.0.2-cudnn-runtime-ubuntu24.04 AS final
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1 libegl1 libopengl0 libglu1-mesa cuda-minimal-build-12-8 libcusparse-dev-12-8 libcublas-dev-12-8 libcusolver-dev-12-8 wget curl git \
@@ -360,12 +361,12 @@ ENV LD_LIBRARY_PATH="/usr/local/lib:/usr/lib/x86_64-linux-gnu:/usr/local/cuda/li
 # Prevent spconv from switching algorithms at runtime
 
 ENV TORCH_CUDA_ARCH_LIST="6.1;7.0;7.5;8.0;8.6;8.9;9.0;12.0"
-ARG TORCH_CUDA=cu128
+ARG TORCH_CUDA=cu130
 ENV TORCH_CUDA=${TORCH_CUDA}
 
 # Version arguments for ComfyUI
-ARG VERSION=v0.3.62
-ARG UPDATE_VERSION=v0.3.62
+ARG VERSION=v0.16.4
+ARG UPDATE_VERSION=v0.16.4
 ENV VERSION=${VERSION}
 ENV UPDATE_VERSION=${UPDATE_VERSION}
 
