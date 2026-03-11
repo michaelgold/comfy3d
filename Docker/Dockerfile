@@ -159,7 +159,7 @@ RUN git clone -b v0.7.13 https://github.com/FindDefinition/cumm.git && \
 
 
 
-arg TORCH_CUDA
+ARG TORCH_CUDA
 ENV TORCH_CUDA=${TORCH_CUDA}
 
 RUN git clone https://github.com/traveller59/spconv && \
@@ -319,10 +319,13 @@ RUN python /app/utils/node_install.py https://github.com/michaelgold/ComfyUI-Ble
 
 RUN uv pip uninstall xformers
 
+ARG TORCH_CUDA
+ENV TORCH_CUDA=${TORCH_CUDA}
+
 RUN --mount=from=wheel-builder,source=/wheels,target=/mnt/wheels,ro \
     --mount=type=cache,target=/root/.cache/pip \
     uv pip install --no-index --find-links=/mnt/wheels --only-binary=:all: --no-deps \
-      diff_gaussian_rasterization  pytorch3d torch_scatter nvdiffrast mesh_processor custom_rasterizer nvdiffrast cumm_cu128 spconv_cu128 flash_attn xformers torch_cluster cumesh flex_gemm nvdiffrec_render o_voxel
+      diff_gaussian_rasterization  pytorch3d torch_scatter nvdiffrast mesh_processor custom_rasterizer nvdiffrast cumm_${TORCH_CUDA} spconv_${TORCH_CUDA} flash_attn xformers torch_cluster cumesh flex_gemm nvdiffrec_render o_voxel
 
 # fix for older nodes     
 RUN uv pip install diffusers==0.34.0 transformers==4.56.0
