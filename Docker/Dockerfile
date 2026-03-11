@@ -127,9 +127,9 @@ ENV TORCH_CUDA_ARCH_LIST=${CUDA_ARCH_LIST}
 
 RUN git clone --recursive https://github.com/kijai/ComfyUI-Hunyuan3DWrapper.git && \
     uv pip install pybind11==2.13.6 && \ 
-    pip wheel -r ComfyUI-Hunyuan3DWrapper/requirements.txt -w /wheels --no-build-isolation && \
-    pip wheel ./ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/custom_rasterizer -w /wheels --no-build-isolation && \
-    pip wheel ./ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/differentiable_renderer -w /wheels --no-build-isolation
+    pip wheel -r ComfyUI-Hunyuan3DWrapper/requirements.txt -w /wheels --no-build-isolation --no-deps && \
+    pip wheel ./ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/custom_rasterizer -w /wheels --no-build-isolation --no-deps  && \
+    pip wheel ./ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/differentiable_renderer -w /wheels --no-build-isolation --no-deps 
 
 
 
