@@ -1,5 +1,6 @@
 # ---------- Stage 0: base build tools ----------
 ARG CUDA_TAG=13.0.2-cudnn-devel-ubuntu24.04
+ARG CUDA_RUNTIME_TAG=13.0.2-cudnn-runtime-ubuntu24.04
 
 FROM nvidia/cuda:${CUDA_TAG} AS build-base
 
@@ -318,7 +319,7 @@ RUN uv pip install --extra-index-url https://michaelgold.github.io/buildbpy/ bpy
 
 
 # ---------- Stage 5: final runtime ----------
-FROM nvidia/13.0.2-cudnn-runtime-ubuntu24.04 AS final
+FROM nvidia/cuda:${CUDA_RUNTIME_TAG} AS final
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1 libegl1 libopengl0 libglu1-mesa cuda-minimal-build-12-8 libcusparse-dev-12-8 libcublas-dev-12-8 libcusolver-dev-12-8 wget curl git \
