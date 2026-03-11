@@ -121,6 +121,10 @@ RUN git clone --recursive https://github.com/NVlabs/nvdiffrast.git && \
 
 # RUN printf "scipy==1.16.1\nnumpy<2\n" > /req-constraints.txt
 
+ENV MAX_JOBS=4
+ARG CUDA_ARCH_LIST
+ENV TORCH_CUDA_ARCH_LIST=${CUDA_ARCH_LIST}
+
 RUN git clone --recursive https://github.com/kijai/ComfyUI-Hunyuan3DWrapper.git && \
     uv pip install pybind11==2.13.6 && \ 
     pip wheel -r ComfyUI-Hunyuan3DWrapper/requirements.txt -w /wheels --no-build-isolation && \
@@ -128,9 +132,7 @@ RUN git clone --recursive https://github.com/kijai/ComfyUI-Hunyuan3DWrapper.git 
     pip wheel ./ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/differentiable_renderer -w /wheels --no-build-isolation
 
 
-ENV MAX_JOBS=4
-ARG CUDA_ARCH_LIST
-ENV TORCH_CUDA_ARCH_LIST=${CUDA_ARCH_LIST}
+
 
 # build flash-attn
 RUN pip wheel flash-attn==2.8.2 -w /wheels --no-build-isolation --no-deps
