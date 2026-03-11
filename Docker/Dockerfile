@@ -126,12 +126,13 @@ ARG CUDA_ARCH_LIST
 ENV TORCH_CUDA_ARCH_LIST=${CUDA_ARCH_LIST}
 
 RUN git clone --recursive https://github.com/kijai/ComfyUI-Hunyuan3DWrapper.git && \
-    uv pip install pybind11==2.13.6 && \
-    unset CFLAGS CXXFLAGS CPPFLAGS LDFLAGS CUDAFLAGS NVCC_FLAGS TORCH_NVCC_FLAGS && \
-    cd ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/custom_rasterizer && \
-    python -m pip wheel . -w /wheels --no-build-isolation --no-deps && \
-    cd ../differentiable_renderer && \
-    python -m pip wheel . -w /wheels --no-build-isolation --no-deps
+    cd ComfyUI-Hunyuan3DWrapper && \
+    git checkout cbe2837e506ffb5942fda754d0f0bccf586363a8 && \
+    uv pip install pybind11==2.13.6 && \ 
+    # pip wheel -r ComfyUI-Hunyuan3DWrapper/requirements.txt -w /wheels --no-build-isolation --no-deps && \
+    pip wheel ./ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/custom_rasterizer -w /wheels --no-build-isolation --no-deps  && \
+    pip wheel ./ComfyUI-Hunyuan3DWrapper/hy3dgen/texgen/differentiable_renderer -w /wheels --no-build-isolation --no-deps 
+
 
 
 
