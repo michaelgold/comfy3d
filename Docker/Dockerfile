@@ -139,6 +139,7 @@ RUN pip wheel flash-attn==2.8.2 -w /wheels --no-build-isolation --no-deps
 ENV SPCONV_DISABLE_JIT="1"
 ENV CUMM_CUDA_ARCH_LIST=${CUDA_ARCH_LIST}
 
+ARG CUMM_CUDA_VERSION
 ENV CUMM_CUDA_VERSION=${CUMM_CUDA_VERSION}
 # ENV CUMM_DISABLE_JIT="1"
 
@@ -367,6 +368,7 @@ ENV CUDA_HOME="/usr/local/cuda"
 ENV LD_LIBRARY_PATH="/usr/local/lib:/usr/lib/x86_64-linux-gnu:/usr/local/cuda/lib64:/usr/local/cuda/targets/x86_64-linux/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 # Prevent spconv from switching algorithms at runtime
 
+ARG CUDA_ARCH_LIST
 ENV TORCH_CUDA_ARCH_LIST=${CUDA_ARCH_LIST}
 ARG TORCH_CUDA
 ENV TORCH_CUDA=${TORCH_CUDA}
