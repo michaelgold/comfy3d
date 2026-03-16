@@ -91,8 +91,11 @@ jobs:
           docker build \
             --build-arg VERSION=${{ needs.check-comfyui-version.outputs.version_to_use }} \
             --build-arg UPDATE_VERSION=${{ needs.check-comfyui-version.outputs.final_update_version }} \
-            --build-arg BASE_IMAGE=${{ matrix.cuda.base_image }} \
+            --build-arg CUDA_TAG=${{ matrix.cuda.cuda_tag }} \
+            --build-arg CUDA_RUNTIME_TAG=${{ matrix.cuda.cuda_runtime_tag }} \
             --build-arg TORCH_CUDA=${{ matrix.cuda.torch_cuda }} \
+            --build-arg CUMM_CUDA_VERSION=${{ matrix.cuda.cumm_cuda_version }} \
+            --build-arg CUDA_ARCH_LIST="${{ matrix.cuda.cuda_arch_list }}" \
             -t michaelgold/comfy3d:${{ needs.check-comfyui-version.outputs.final_update_version }}-${{ matrix.cuda.tag_suffix }} \
             -f Docker/Dockerfile .
       - name: Test container
