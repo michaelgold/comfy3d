@@ -4,6 +4,7 @@ ARG CUDA_RUNTIME_TAG=13.0.2-cudnn-runtime-ubuntu24.04
 ARG CUMM_CUDA_VERSION=13.0
 ARG CUDA_ARCH_LIST="7.5;8.0;8.6;8.9;9.0;12.0"
 ARG TORCH_CUDA=cu130
+ARG COMFY_CLI_VERSION=1.6.0
 
 FROM nvidia/cuda:${CUDA_TAG} AS build-base
 
@@ -59,6 +60,7 @@ RUN wget -q https://github.com/astral-sh/uv/releases/latest/download/uv-x86_64-u
     chmod +x /usr/local/bin/uv /usr/local/bin/uvx && rm -rf uv-extract *.tar.gz
 
 ARG TORCH_CUDA
+ARG COMFTY_CLI_VERSION
 # Optional: copy constraints
 COPY ./constraints.txt /tmp/constraints.txt
 ENV UV_CONSTRAINT=/tmp/constraints.txt
@@ -66,7 +68,7 @@ ENV PIP_CONSTRAINT=/tmp/constraints.txt
 ENV UV_NO_CACHE=1
 ENV PIP_NO_CACHE_DIR=1
 
-RUN uv pip install comfy-cli && \
+RUN uv pip install comfy-cli==${COMFY_CLI_VERSION} && \
     comfy --skip-prompt --workspace=/app/comfy install --nvidia --version $VERSION --fast-deps && \
     uv pip uninstall torch torchvision torchaudio xformers && \
     uv pip install torch torchvision torchaudio --force-reinstall --index-url https://download.pytorch.org/whl/${TORCH_CUDA}
