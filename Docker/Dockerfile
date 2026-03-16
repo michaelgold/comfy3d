@@ -60,7 +60,7 @@ RUN wget -q https://github.com/astral-sh/uv/releases/latest/download/uv-x86_64-u
     chmod +x /usr/local/bin/uv /usr/local/bin/uvx && rm -rf uv-extract *.tar.gz
 
 ARG TORCH_CUDA
-ARG COMFTY_CLI_VERSION
+ARG COMFY_CLI_VERSION
 # Optional: copy constraints
 COPY ./constraints.txt /tmp/constraints.txt
 ENV UV_CONSTRAINT=/tmp/constraints.txt
