@@ -321,6 +321,8 @@ RUN python /app/utils/node_install.py https://github.com/michaelgold/ComfyUI-Ble
 
 RUN python /app/utils/node_install.py https://github.com/Lightricks/ComfyUI-LTXVideo --version 531512f7286963dc7aff1fd8bf5556e95eae03af
 
+RUN python /app/utils/node_install.py https://github.com/evanspearman/ComfyMath --version c01177221c31b8e5fbc062778fc8254aeb541638
+
 RUN uv pip uninstall xformers
 
 ARG TORCH_CUDA
