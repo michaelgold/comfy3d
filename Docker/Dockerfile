@@ -319,6 +319,8 @@ RUN python /app/utils/node_install.py https://github.com/yolain/ComfyUI-Easy-Use
 
 RUN python /app/utils/node_install.py https://github.com/michaelgold/ComfyUI-Blender-Nodes --version 0bb265061d4a75935b641a131ccfebef5ff9261e
 
+RUN python /app/utils/node_install.py https://github.com/Lightricks/ComfyUI-LTXVideo --version 531512f7286963dc7aff1fd8bf5556e95eae03af
+
 RUN uv pip uninstall xformers
 
 ARG TORCH_CUDA
