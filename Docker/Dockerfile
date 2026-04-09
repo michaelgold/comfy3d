@@ -297,8 +297,7 @@ RUN python /app/utils/node_install.py https://github.com/michaelgold/ComfyUI-HF-
 
 RUN python /app/utils/node_install.py https://github.com/lquesada/ComfyUI-Inpaint-CropAndStitch --version b432b2411cbb7d3192d35953bd3aafea05a0e245
 
-RUN python /app/utils/node_install.py https://github.com/MrForExample/ComfyUI-3D-Pack --version 9ab02eb440b98cf7dea0c2de9379f45d99d160d5 --no-build-isolation && \
-uv pip uninstall cumm-cu126 spconv_cu126 utils3d && \
+RUN python /app/utils/node_install.py https://github.com/MrForExample/ComfyUI-3D-Pack --version 9ab02eb440b98cf7dea0c2de9379f45d99d160d5 --no-build-isolation -i cumm==0.7.11 -i spconv-cu126 -i utils3d && \
 uv pip install git+https://github.com/EasternJournalist/utils3d.git@9a4eb15e4021b67b12c460c7057d642626897ec8
 
 

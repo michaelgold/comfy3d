@@ -2,7 +2,7 @@ import logging
 import subprocess
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 import typer
 
@@ -21,6 +21,12 @@ def main(
     repo_url: str = typer.Argument(..., help="Git repository URL to clone"),
     version: Optional[str] = typer.Option(None, "--version", "-v", help="Specific branch, tag, or commit hash to clone"),
     no_build_isolation: bool = typer.Option(False, "--no-build-isolation", help="Disable build isolation for pip install"),
+    ignore_requirement: Optional[List[str]] = typer.Option(
+        None,
+        "--ignore-requirement",
+        "-i",
+        help="Requirement line prefix to remove from requirements.txt (can be passed multiple times)",
+    ),
 ) -> None:
     """
     Clone a git repository to /app/comfy/custom_nodes and install its requirements.
@@ -30,6 +36,8 @@ def main(
         logger.info(f"Target version/branch/commit: {version}")
     if no_build_isolation:
         logger.info("Build isolation disabled for pip install")
+    if ignore_requirement:
+        logger.info(f"Will ignore requirement prefixes: {', '.join(ignore_requirement)}")
     
     target_dir = Path("/app/comfy/custom_nodes")
     target_dir.mkdir(parents=True, exist_ok=True)
@@ -130,10 +138,40 @@ def main(
         requirements_file = clone_path / "requirements.txt"
         if requirements_file.exists():
             logger.info(f"Found requirements.txt at {requirements_file}")
+
+            if ignore_requirement:
+                try:
+                    with open(requirements_file, 'r', encoding='utf-8') as f:
+                        original_lines = f.readlines()
+
+                    filtered_lines = []
+                    removed_requirements = []
+                    for line in original_lines:
+                        stripped = line.strip()
+                        if stripped and not stripped.startswith('#') and any(
+                            stripped.startswith(prefix) for prefix in ignore_requirement
+                        ):
+                            removed_requirements.append(stripped)
+                            continue
+                        filtered_lines.append(line)
+
+                    if removed_requirements:
+                        with open(requirements_file, 'w', encoding='utf-8') as f:
+                            f.writelines(filtered_lines)
+                        logger.info(
+                            f"Removed {len(removed_requirements)} requirement(s): {', '.join(removed_requirements)}"
+                        )
+                        typer.echo(
+                            f"Removed {len(removed_requirements)} requirement(s) from requirements.txt"
+                        )
+                    else:
+                        logger.info("No matching requirements found to remove")
+                except Exception as e:
+                    logger.warning(f"Could not filter requirements.txt: {e}")
             
             # Read and log requirements for visibility
             try:
-                with open(requirements_file, 'r') as f:
+                with open(requirements_file, 'r', encoding='utf-8') as f:
                     requirements_content = f.read().strip()
                     if requirements_content:
                         logger.info(f"Requirements to install:\n{requirements_content}")
