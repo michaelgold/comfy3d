@@ -345,9 +345,9 @@ RUN uv pip install --extra-index-url https://michaelgold.github.io/buildbpy/ bpy
 FROM nvidia/cuda:${CUDA_RUNTIME_TAG} AS final
 ARG CUDA_PACKAGE_VERSION
 
-# Final image only needs CUDA runtime libs; build/development headers are not required here.
+# Final image only needs CUDA runtime libs; build/development packages are not required here.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libgl1 libegl1 libopengl0 libglu1-mesa cuda-minimal-build-${CUDA_PACKAGE_VERSION} libcusparse-${CUDA_PACKAGE_VERSION} libcublas-${CUDA_PACKAGE_VERSION} libcusolver-${CUDA_PACKAGE_VERSION} wget curl git \
+    libgl1 libegl1 libopengl0 libglu1-mesa libcusparse-${CUDA_PACKAGE_VERSION} libcublas-${CUDA_PACKAGE_VERSION} libcusolver-${CUDA_PACKAGE_VERSION} wget curl git \
     libglib2.0-0 libglib2.0-dev libgthread-2.0-0 \
     libtbbmalloc2 \
    libvorbis-dev libtheora-dev   libjpeg-dev libpng-dev libtiff-dev \
