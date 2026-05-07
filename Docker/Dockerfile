@@ -2,6 +2,7 @@
 ARG CUDA_TAG=13.0.2-cudnn-devel-ubuntu24.04
 ARG CUDA_RUNTIME_TAG=13.0.2-cudnn-runtime-ubuntu24.04
 ARG CUMM_CUDA_VERSION=13.0
+ARG CUDA_PACKAGE_VERSION=13-0
 ARG CUDA_ARCH_LIST="7.5;8.0;8.6;8.9;9.0;12.0"
 ARG TORCH_CUDA=cu130
 ARG COMFY_CLI_VERSION=1.6.0
@@ -342,9 +343,10 @@ RUN uv pip install --extra-index-url https://michaelgold.github.io/buildbpy/ bpy
 
 # ---------- Stage 5: final runtime ----------
 FROM nvidia/cuda:${CUDA_RUNTIME_TAG} AS final
+ARG CUDA_PACKAGE_VERSION
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libgl1 libegl1 libopengl0 libglu1-mesa cuda-minimal-build-12-8 libcusparse-dev-12-8 libcublas-dev-12-8 libcusolver-dev-12-8 wget curl git \
+    libgl1 libegl1 libopengl0 libglu1-mesa cuda-minimal-build-${CUDA_PACKAGE_VERSION} libcusparse-${CUDA_PACKAGE_VERSION} libcublas-${CUDA_PACKAGE_VERSION} libcusolver-${CUDA_PACKAGE_VERSION} wget curl git \
     libglib2.0-0 libglib2.0-dev libgthread-2.0-0 \
     libtbbmalloc2 \
    libvorbis-dev libtheora-dev   libjpeg-dev libpng-dev libtiff-dev \
