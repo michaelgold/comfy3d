@@ -75,14 +75,14 @@ jobs:
             torch_cuda: cu128
             tag_suffix: cuda12.8
             cumm_cuda_version: "12.8"
-            cuda_major_version: "12"
+            cuda_package_version: "12-8"
             cuda_arch_list: "7.0;7.5;8.0;8.6;8.9;9.0;12.0"
           - cuda_tag: "13.0.2-cudnn-devel-ubuntu24.04"
             cuda_runtime_tag: "13.0.2-cudnn-runtime-ubuntu24.04"
             torch_cuda: cu130
             tag_suffix: cuda13.0
             cumm_cuda_version: "13.0"
-            cuda_major_version: "13"
+            cuda_package_version: "13-0"
             cuda_arch_list: "7.5;8.0;8.6;8.9;9.0;12.0"
     runs-on: self-hosted
     timeout-minutes: 300
@@ -106,7 +106,7 @@ jobs:
             --build-arg CUDA_RUNTIME_TAG=${{ matrix.cuda.cuda_runtime_tag }} \
             --build-arg TORCH_CUDA=${{ matrix.cuda.torch_cuda }} \
             --build-arg CUMM_CUDA_VERSION=${{ matrix.cuda.cumm_cuda_version }} \
-            --build-arg CUDA_MAJOR_VERSION=${{ matrix.cuda.cuda_major_version }} \
+            --build-arg CUDA_PACKAGE_VERSION=${{ matrix.cuda.cuda_package_version }} \
             --build-arg CUDA_ARCH_LIST="${{ matrix.cuda.cuda_arch_list }}" \
             -t michaelgold/comfy3d:${{ needs.check-comfyui-version.outputs.final_update_version }}-${{ matrix.cuda.tag_suffix }} \
             -f Docker/Dockerfile .
