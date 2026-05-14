@@ -1,6 +1,7 @@
 # ---------- Stage 0: base build tools ----------
 ARG CUDA_TAG=13.0.2-cudnn-devel-ubuntu24.04
 ARG CUDA_RUNTIME_TAG=13.0.2-cudnn-runtime-ubuntu24.04
+ARG CUDA_MAJOR_VERSION=13
 ARG CUMM_CUDA_VERSION=13.0
 ARG CUDA_ARCH_LIST="7.5;8.0;8.6;8.9;9.0;12.0"
 ARG TORCH_CUDA=cu130
@@ -14,7 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     zlib1g-dev libssl-dev libbz2-dev libreadline-dev \
     sqlite3 libsqlite3-0 libsqlite3-dev libffi-dev liblzma-dev uuid-dev \
     libegl1-mesa-dev libgl1-mesa-dev libglvnd-dev libsm6 libxext6 libxrender1 \
-    ffmpeg ca-certificates && \ 
+    ffmpeg ca-certificates && \
     apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
 # ---------- Stage 1: build Python ----------
@@ -34,7 +35,7 @@ RUN ln -sf /usr/local/bin/python3 /usr/local/bin/python && \
 FROM nvidia/cuda:${CUDA_TAG} AS venv-builder
 # Copy Python runtime from python-builder
 
-RUN apt-get update && apt-get install -y --no-install-recommends curl wget git ca-certificates ninja-build && \ 
+RUN apt-get update && apt-get install -y --no-install-recommends curl wget git ca-certificates ninja-build && \
     apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
 COPY --from=python-builder /usr/local/bin/python* /usr/local/bin/
@@ -130,7 +131,7 @@ ENV TORCH_CUDA_ARCH_LIST=${CUDA_ARCH_LIST}
 RUN git clone --recursive https://github.com/kijai/ComfyUI-Hunyuan3DWrapper.git && \
     cd ComfyUI-Hunyuan3DWrapper && \
     git checkout cbe2837e506ffb5942fda754d0f0bccf586363a8 && \
-    uv pip install pybind11==2.13.6 && \ 
+    uv pip install pybind11==2.13.6 && \
     # pip wheel -r ComfyUI-Hunyuan3DWrapper/requirements.txt -w /wheels --no-build-isolation --no-deps && \
     pip wheel ./hy3dgen/texgen/custom_rasterizer -w /wheels --no-build-isolation --no-deps  && \
     pip wheel ./hy3dgen/texgen/differentiable_renderer -w /wheels --no-build-isolation --no-deps 
@@ -251,7 +252,7 @@ RUN mkdir -p ${TORCH_EXTENSIONS_DIR}
 FROM native-builder AS comfy-builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    pkg-config libcairo2-dev && \ 
+    pkg-config libcairo2-dev && \
     apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
 # ARG CUDA_VERSION_FOR_COMFY=12.6
@@ -341,14 +342,18 @@ RUN uv pip install --extra-index-url https://michaelgold.github.io/buildbpy/ bpy
 
 
 # ---------- Stage 5: final runtime ----------
+ARG CUDA_MAJOR_VERSION
 FROM nvidia/cuda:${CUDA_RUNTIME_TAG} AS final
+ARG CUDA_MAJOR_VERSION
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libgl1 libegl1 libopengl0 libglu1-mesa cuda-minimal-build-12-8 libcusparse-dev-12-8 libcublas-dev-12-8 libcusolver-dev-12-8 wget curl git \
+    libgl1 libegl1 libopengl0 libglu1-mesa \
+    libcusparse-${CUDA_MAJOR_VERSION} libcublas-${CUDA_MAJOR_VERSION} libcusolver-${CUDA_MAJOR_VERSION} \
+    wget curl git \
     libglib2.0-0 libglib2.0-dev libgthread-2.0-0 \
     libtbbmalloc2 \
-   libvorbis-dev libtheora-dev   libjpeg-dev libpng-dev libtiff-dev \
-   libxfixes3 libxi6 libxrender1 libxkbcommon0 libsm6 libxext6 \
+    libvorbis-dev libtheora-dev libjpeg-dev libpng-dev libtiff-dev \
+    libxfixes3 libxi6 libxrender1 libxkbcommon0 libsm6 libxext6 \
     && apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
 
