@@ -114,7 +114,10 @@ jobs:
         run: |
           # Remove existing container if it exists
           docker rm -f comfy-test || true
-          docker run -d -p 8234:8188 --name comfy-test --runtime=nvidia --gpus all michaelgold/comfy3d:${{ needs.check-comfyui-version.outputs.final_update_version }}-${{ matrix.cuda.tag_suffix }}
+          mkdir -p "$HOME/.cache/comfy3d-models"
+          docker run -d -p 8234:8188 --name comfy-test --runtime=nvidia --gpus all \
+            -v "$HOME/.cache/comfy3d-models:/app/comfy/models" \
+            michaelgold/comfy3d:${{ needs.check-comfyui-version.outputs.final_update_version }}-${{ matrix.cuda.tag_suffix }}
           sleep 150
           docker logs comfy-test > logs.txt 2>&1
           cat logs.txt
@@ -133,6 +136,28 @@ jobs:
             python3 -m venv /tmp/remesher-smoke-venv
             /tmp/remesher-smoke-venv/bin/python -m pip install --upgrade pip
             /tmp/remesher-smoke-venv/bin/python -m pip install /tmp/remesher-workflows
+            docker exec comfy-test bash -lc '
+              set -euo pipefail
+              download_model() {
+                url="$1"
+                dest="$2"
+                mkdir -p "$(dirname "$dest")"
+                if [ -s "$dest" ]; then
+                  echo "Model already present: $dest"
+                  return 0
+                fi
+                echo "Downloading model: $url -> $dest"
+                tmp="${dest}.tmp"
+                rm -f "$tmp"
+                curl -L --fail --retry 5 --retry-delay 10 --connect-timeout 30 -o "$tmp" "$url"
+                test -s "$tmp"
+                mv "$tmp" "$dest"
+              }
+              download_model "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/diffusion_models/qwen_image_2512_fp8_e4m3fn.safetensors" "/app/comfy/models/diffusion_models/qwen_image_2512_fp8_e4m3fn.safetensors"
+              download_model "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors" "/app/comfy/models/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors"
+              download_model "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/vae/qwen_image_vae.safetensors" "/app/comfy/models/vae/qwen_image_vae.safetensors"
+              download_model "https://huggingface.co/lightx2v/Qwen-Image-Lightning/resolve/main/Qwen-Image-Lightning-4steps-V1.0.safetensors" "/app/comfy/models/loras/Qwen-Image-Lightning-4steps-V1.0.safetensors"
+            '
             /tmp/remesher-smoke-venv/bin/comfy-prompt-cli text-to-image \
               --prompt "cute 3d robot character in a clean t-pose, arms straight out horizontally, front view, centered, full body, neutral background, toy-like rounded shapes" \
               --seed 12345 \
