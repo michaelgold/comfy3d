@@ -123,9 +123,46 @@ jobs:
           else
             echo "❌ ComfyUI server did not start" && exit 1
           fi
-          rm -rf /tmp/remesher-workflows
+          rm -rf /tmp/remesher-workflows /tmp/remesher-smoke
           git clone --depth 1 https://github.com/remesher/remesher.git /tmp/remesher-workflows
           python utils/check_remesher_workflows.py /tmp/remesher-workflows/examples --server http://127.0.0.1:8234
+          if [[ "${{ matrix.cuda.tag_suffix }}" == "cuda13.0" ]]; then
+            cd /tmp/remesher-workflows
+            printf '{"server_url":"http://127.0.0.1:8234"}\n' > config.json
+            mkdir -p /tmp/remesher-smoke/images /tmp/remesher-smoke/glb /tmp/remesher-smoke/rigged
+            python3 -m venv /tmp/remesher-smoke-venv
+            /tmp/remesher-smoke-venv/bin/python -m pip install --upgrade pip
+            /tmp/remesher-smoke-venv/bin/python -m pip install /tmp/remesher-workflows
+            /tmp/remesher-smoke-venv/bin/comfy-prompt-cli text-to-image \
+              --prompt "cute 3d robot character in a clean t-pose, arms straight out horizontally, front view, centered, full body, neutral background, toy-like rounded shapes" \
+              --seed 12345 \
+              --filename-prefix ci_smoke_robot_tpose \
+              --timeout 3600 \
+              --out-dir /tmp/remesher-smoke/images
+            SMOKE_IMAGE="$(find /tmp/remesher-smoke/images -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \) | sort | head -n 1)"
+            test -s "$SMOKE_IMAGE"
+            echo "Remesher smoke image: $SMOKE_IMAGE"
+            /tmp/remesher-smoke-venv/bin/comfy-prompt-cli image-to-glb \
+              --image "$SMOKE_IMAGE" \
+              --mesh-seed 23456 \
+              --target-face-num 50000 \
+              --filename-prefix ci_smoke_robot_glb \
+              --texture-seed 34567 \
+              --timeout 3600 \
+              --out-dir /tmp/remesher-smoke/glb
+            SMOKE_GLB="$(find /tmp/remesher-smoke/glb -type f -iname '*.glb' | sort | head -n 1)"
+            test -s "$SMOKE_GLB"
+            echo "Remesher smoke GLB: $SMOKE_GLB"
+            /tmp/remesher-smoke-venv/bin/comfy-prompt-cli rig-glb \
+              --mesh "$SMOKE_GLB" \
+              --glb-name ci_smoke_robot_rigged \
+              --timeout 3600 \
+              --out-dir /tmp/remesher-smoke/rigged
+            SMOKE_RIGGED_GLB="$(find /tmp/remesher-smoke/rigged -type f -iname '*.glb' | sort | head -n 1)"
+            test -s "$SMOKE_RIGGED_GLB"
+            echo "Remesher smoke rigged GLB: $SMOKE_RIGGED_GLB"
+            cd "$GITHUB_WORKSPACE"
+          fi
           docker stop comfy-test
           docker rm comfy-test
 
