@@ -340,7 +340,6 @@ RUN uv pip install diffusers==0.34.0 transformers==4.56.0
 RUN uv pip install --extra-index-url https://michaelgold.github.io/buildbpy/ bpy==5.0.1
 
 
-
 # ---------- Stage 5: final runtime ----------
 ARG CUDA_PACKAGE_VERSION
 FROM nvidia/cuda:${CUDA_RUNTIME_TAG} AS final
@@ -386,6 +385,17 @@ ENV PYOPENGL_PLATFORM=egl
 ENV FORCE_CUDA="1"
 ENV CUDA_HOME="/usr/local/cuda"
 ENV LD_LIBRARY_PATH="/usr/local/lib:/usr/lib/x86_64-linux-gnu:/usr/local/cuda/lib64:/usr/local/cuda/targets/x86_64-linux/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+
+# Optionally install a user-provided Auto-Rig Pro zip without committing it to this
+# public repo. Pass with:
+#   docker build --secret id=auto_rig_pro_zip,src=$HOME/auto_rig_pro-master-new.zip ...
+RUN --mount=type=secret,id=auto_rig_pro_zip,target=/tmp/auto_rig_pro.zip,required=false \
+    if [ -f /tmp/auto_rig_pro.zip ]; then \
+      python /app/utils/install_blender_addon_zip.py /tmp/auto_rig_pro.zip --module auto_rig_pro; \
+    else \
+      echo "No Auto-Rig Pro zip secret supplied; skipping Blender addon install"; \
+    fi
+
 # Prevent spconv from switching algorithms at runtime
 
 ARG CUDA_ARCH_LIST
