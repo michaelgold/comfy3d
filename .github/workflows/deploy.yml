@@ -166,6 +166,11 @@ jobs:
               download_model "https://huggingface.co/facebook/dinov3-vitl16-pretrain-lvd1689m/resolve/main/config.json" "/app/comfy/models/facebook/dinov3-vitl16-pretrain-lvd1689m/config.json"
               download_model "https://huggingface.co/facebook/dinov3-vitl16-pretrain-lvd1689m/resolve/main/preprocessor_config.json" "/app/comfy/models/facebook/dinov3-vitl16-pretrain-lvd1689m/preprocessor_config.json"
               download_model "https://huggingface.co/facebook/dinov3-vitl16-pretrain-lvd1689m/resolve/main/model.safetensors" "/app/comfy/models/facebook/dinov3-vitl16-pretrain-lvd1689m/model.safetensors"
+              download_model "https://huggingface.co/jasongzy/Make-It-Animatable/resolve/main/output/best/new/bw.pth" "/app/comfy/models/mia/bw.pth"
+              download_model "https://huggingface.co/jasongzy/Make-It-Animatable/resolve/main/output/best/new/bw_normal.pth" "/app/comfy/models/mia/bw_normal.pth"
+              download_model "https://huggingface.co/jasongzy/Make-It-Animatable/resolve/main/output/best/new/joints.pth" "/app/comfy/models/mia/joints.pth"
+              download_model "https://huggingface.co/jasongzy/Make-It-Animatable/resolve/main/output/best/new/joints_coarse.pth" "/app/comfy/models/mia/joints_coarse.pth"
+              download_model "https://huggingface.co/jasongzy/Make-It-Animatable/resolve/main/output/best/new/pose.pth" "/app/comfy/models/mia/pose.pth"
             '
             /tmp/remesher-smoke-venv/bin/comfy-prompt-cli text-to-image \
               --prompt "cute 3d robot character in a clean t-pose, arms straight out horizontally, front view, centered, full body, neutral background, toy-like rounded shapes" \
