@@ -311,7 +311,7 @@ RUN python /app/utils/node_install.py https://github.com/calcuis/gguf --version 
 
 RUN python /app/utils/node_install.py https://github.com/michaelgold/ComfyUI-UniRig --version 95951d70b3c1bedce89d051679085a902de9882e --no-build-isolation
 
-RUN python /app/utils/node_install.py https://github.com/michaelgold/ComfyUI-GeometryPack --version comfy3d/no-comfy-env --no-build-isolation
+RUN python /app/utils/node_install.py https://github.com/michaelgold/ComfyUI-GeometryPack --version 8229aa65ec026b4b87802e4ac3b28022c8dd628b --no-build-isolation
 
 RUN python /app/utils/node_install.py https://github.com/visualbruno/ComfyUI-Trellis2 --version 3c7e46b265c1e28f523889ad24d65708cdeee7f8 --no-build-isolation
 

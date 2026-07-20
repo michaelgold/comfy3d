@@ -123,6 +123,9 @@ jobs:
           else
             echo "❌ ComfyUI server did not start" && exit 1
           fi
+          rm -rf /tmp/remesher-workflows
+          git clone --depth 1 https://github.com/remesher/remesher.git /tmp/remesher-workflows
+          python utils/check_remesher_workflows.py /tmp/remesher-workflows/examples --server http://127.0.0.1:8234
           docker stop comfy-test
           docker rm comfy-test
 
