@@ -386,10 +386,6 @@ ENV FORCE_CUDA="1"
 ENV CUDA_HOME="/usr/local/cuda"
 ENV LD_LIBRARY_PATH="/usr/local/lib:/usr/lib/x86_64-linux-gnu:/usr/local/cuda/lib64:/usr/local/cuda/targets/x86_64-linux/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
-# Install Auto-Rig Pro from the checked-in GPL/Royalty-Free/CC0 package.
-COPY ./third_party/auto_rig_pro /app/third_party/auto_rig_pro
-RUN python /app/utils/install_blender_addon_zip.py /app/third_party/auto_rig_pro --module auto_rig_pro
-
 # Prevent spconv from switching algorithms at runtime
 
 ARG CUDA_ARCH_LIST
