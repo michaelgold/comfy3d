@@ -1,0 +1,4 @@
+Asset files in this folder are released under the terms of a Royalty Free license: 
+Upon purchasing the addon, you are granted a non-exclusive, perpetual license to use the included asset files (images, icons, blend files...) as part of the addon. The purchase requires a one-time payment only; no additional royalties or recurring fees are required for continued use.
+The asset files may only be used as part of the addon and may not be extracted for use in other projects.
+They may not be redistributed, resold, sublicensed, or made available as standalone files, whether modified or unmodified.

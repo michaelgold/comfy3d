@@ -85,7 +85,7 @@ ENV VIRTUAL_ENV="/app/.venv"
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV NVIDIA_VISIBLE_DEVICES=all
-ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility,graphics
+ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
 ENV PYOPENGL_PLATFORM=egl
 ENV FORCE_CUDA="1"
 ENV CUDA_HOME="/usr/local/cuda"
@@ -222,7 +222,7 @@ ENV VIRTUAL_ENV="/app/.venv"
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV NVIDIA_VISIBLE_DEVICES=all
-ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility,graphics
+ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
 ENV PYOPENGL_PLATFORM=egl
 ENV FORCE_CUDA="1"
 ENV CUDA_HOME="/usr/local/cuda"
@@ -380,21 +380,15 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV NVIDIA_VISIBLE_DEVICES=all
-ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility,graphics
+ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
 ENV PYOPENGL_PLATFORM=egl
 ENV FORCE_CUDA="1"
 ENV CUDA_HOME="/usr/local/cuda"
 ENV LD_LIBRARY_PATH="/usr/local/lib:/usr/lib/x86_64-linux-gnu:/usr/local/cuda/lib64:/usr/local/cuda/targets/x86_64-linux/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
-# Optionally install a user-provided Auto-Rig Pro zip without committing it to this
-# public repo. Pass with:
-#   docker build --secret id=auto_rig_pro_zip,src=$HOME/auto_rig_pro-master-new.zip ...
-RUN --mount=type=secret,id=auto_rig_pro_zip,target=/tmp/auto_rig_pro.zip,required=false \
-    if [ -f /tmp/auto_rig_pro.zip ]; then \
-      python /app/utils/install_blender_addon_zip.py /tmp/auto_rig_pro.zip --module auto_rig_pro; \
-    else \
-      echo "No Auto-Rig Pro zip secret supplied; skipping Blender addon install"; \
-    fi
+# Install Auto-Rig Pro from the checked-in GPL/Royalty-Free/CC0 package.
+COPY ./third_party/auto_rig_pro /app/third_party/auto_rig_pro
+RUN python /app/utils/install_blender_addon_zip.py /app/third_party/auto_rig_pro --module auto_rig_pro
 
 # Prevent spconv from switching algorithms at runtime
 

@@ -99,15 +99,7 @@ jobs:
             echo "final_update_version is empty" >&2
             exit 1
           fi
-          AUTO_RIG_PRO_SECRET=()
-          if [[ -f "$HOME/auto_rig_pro-master-new.zip" ]]; then
-            echo "Using Auto-Rig Pro zip from $HOME/auto_rig_pro-master-new.zip"
-            AUTO_RIG_PRO_SECRET=(--secret id=auto_rig_pro_zip,src="$HOME/auto_rig_pro-master-new.zip")
-          else
-            echo "No Auto-Rig Pro zip found at $HOME/auto_rig_pro-master-new.zip; build will continue without it"
-          fi
           docker build \
-            "${AUTO_RIG_PRO_SECRET[@]}" \
             --build-arg VERSION=${{ needs.check-comfyui-version.outputs.version_to_use }} \
             --build-arg UPDATE_VERSION=${{ needs.check-comfyui-version.outputs.final_update_version }} \
             --build-arg CUDA_TAG=${{ matrix.cuda.cuda_tag }} \

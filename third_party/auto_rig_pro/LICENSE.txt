@@ -1,0 +1,6 @@
+Auto-Rig Pro is released under the terms of multiple licenses:
+The add-on source code components of Auto-Rig Pro are released under the terms of the GNU General Public License, version 3. 
+Assets files such as icon image components, and rig components in .blend format, are released under the terms of the Royalty Free license and CC0.
+Refer to the LICENSE file in the subfolders for more details.
+
+NOTE: in any case, a rig generated with Auto-Rig Pro by the end-user (such as in the process of rigging a character for example), is the sole property of the end-user who has full rights on it.
