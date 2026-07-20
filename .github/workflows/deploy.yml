@@ -128,6 +128,8 @@ jobs:
           fi
           rm -rf /tmp/remesher-workflows /tmp/remesher-smoke
           git clone --depth 1 https://github.com/remesher/remesher.git /tmp/remesher-workflows
+          git -C /tmp/remesher-workflows fetch --depth 1 origin bf177e9629718ab58c0e0cc4010a15ca49b3adc2
+          git -C /tmp/remesher-workflows checkout bf177e9629718ab58c0e0cc4010a15ca49b3adc2
           python utils/check_remesher_workflows.py /tmp/remesher-workflows/examples --server http://127.0.0.1:8234
           if [[ "${{ matrix.cuda.tag_suffix }}" == "cuda13.0" ]]; then
             cd /tmp/remesher-workflows
