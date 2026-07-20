@@ -112,6 +112,25 @@ jobs:
             -f Docker/Dockerfile .
       - name: Test container
         run: |
+          cleanup() {
+            status=$?
+            if [ "$status" -ne 0 ]; then
+              echo "::group::comfy-test diagnostics"
+              docker ps -a --filter name=comfy-test --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" || true
+              docker logs --tail 500 comfy-test || true
+              nvidia-smi || true
+              echo "::endgroup::"
+            fi
+            docker rm -f comfy-test || true
+            exit "$status"
+          }
+          trap cleanup EXIT
+          free_comfy_memory() {
+            curl -sS -X POST http://127.0.0.1:8234/free \
+              -H 'Content-Type: application/json' \
+              -d '{"unload_models": true, "free_memory": true}' || true
+            sleep 5
+          }
           # Remove existing container if it exists
           docker rm -f comfy-test || true
           mkdir -p "$HOME/.cache/comfy3d-models"
@@ -181,6 +200,7 @@ jobs:
             SMOKE_IMAGE="$(find /tmp/remesher-smoke/images -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \) | sort | head -n 1)"
             test -s "$SMOKE_IMAGE"
             echo "Remesher smoke image: $SMOKE_IMAGE"
+            free_comfy_memory
             /tmp/remesher-smoke-venv/bin/comfy-prompt-cli image-to-glb \
               --image "$SMOKE_IMAGE" \
               --mesh-seed 23456 \
@@ -192,6 +212,7 @@ jobs:
             SMOKE_GLB="$(find /tmp/remesher-smoke/glb -type f -iname '*.glb' | sort | head -n 1)"
             test -s "$SMOKE_GLB"
             echo "Remesher smoke GLB: $SMOKE_GLB"
+            free_comfy_memory
             /tmp/remesher-smoke-venv/bin/comfy-prompt-cli rig-glb \
               --mesh "$SMOKE_GLB" \
               --glb-name ci_smoke_robot_rigged \
@@ -202,8 +223,6 @@ jobs:
             echo "Remesher smoke rigged GLB: $SMOKE_RIGGED_GLB"
             cd "$GITHUB_WORKSPACE"
           fi
-          docker stop comfy-test
-          docker rm comfy-test
 
   push:
     needs: [check-comfyui-version, build-and-test]
