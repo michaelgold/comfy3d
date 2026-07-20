@@ -138,7 +138,7 @@ jobs:
             python3 -m venv /tmp/remesher-smoke-venv
             /tmp/remesher-smoke-venv/bin/python -m pip install --upgrade pip
             /tmp/remesher-smoke-venv/bin/python -m pip install /tmp/remesher-workflows
-            docker exec comfy-test bash -lc '
+            docker exec -e HF_TOKEN="${{ secrets.HF_TOKEN }}" comfy-test bash -lc '
               set -euo pipefail
               download_model() {
                 url="$1"
@@ -151,7 +151,11 @@ jobs:
                 echo "Downloading model: $url -> $dest"
                 tmp="${dest}.tmp"
                 rm -f "$tmp"
-                curl -L --fail --retry 5 --retry-delay 10 --connect-timeout 30 -o "$tmp" "$url"
+                auth_args=()
+                if [ -n "${HF_TOKEN:-}" ]; then
+                  auth_args=(-H "Authorization: Bearer ${HF_TOKEN}")
+                fi
+                curl -L --fail --retry 5 --retry-delay 10 --connect-timeout 30 "${auth_args[@]}" -o "$tmp" "$url"
                 test -s "$tmp"
                 mv "$tmp" "$dest"
               }
@@ -159,6 +163,9 @@ jobs:
               download_model "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors" "/app/comfy/models/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors"
               download_model "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/vae/qwen_image_vae.safetensors" "/app/comfy/models/vae/qwen_image_vae.safetensors"
               download_model "https://huggingface.co/lightx2v/Qwen-Image-Lightning/resolve/main/Qwen-Image-Lightning-4steps-V1.0.safetensors" "/app/comfy/models/loras/Qwen-Image-Lightning-4steps-V1.0.safetensors"
+              download_model "https://huggingface.co/facebook/dinov3-vitl16-pretrain-lvd1689m/resolve/main/config.json" "/app/comfy/models/facebook/dinov3-vitl16-pretrain-lvd1689m/config.json"
+              download_model "https://huggingface.co/facebook/dinov3-vitl16-pretrain-lvd1689m/resolve/main/preprocessor_config.json" "/app/comfy/models/facebook/dinov3-vitl16-pretrain-lvd1689m/preprocessor_config.json"
+              download_model "https://huggingface.co/facebook/dinov3-vitl16-pretrain-lvd1689m/resolve/main/model.safetensors" "/app/comfy/models/facebook/dinov3-vitl16-pretrain-lvd1689m/model.safetensors"
             '
             /tmp/remesher-smoke-venv/bin/comfy-prompt-cli text-to-image \
               --prompt "cute 3d robot character in a clean t-pose, arms straight out horizontally, front view, centered, full body, neutral background, toy-like rounded shapes" \
