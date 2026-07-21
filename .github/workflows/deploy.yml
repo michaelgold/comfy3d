@@ -147,8 +147,8 @@ jobs:
           fi
           rm -rf /tmp/remesher-workflows /tmp/remesher-smoke
           git clone --depth 1 https://github.com/remesher/remesher.git /tmp/remesher-workflows
-          git -C /tmp/remesher-workflows fetch --depth 1 origin 3793c4cd8291a20fded9e89a1b79fef0079d8cdb
-          git -C /tmp/remesher-workflows checkout 3793c4cd8291a20fded9e89a1b79fef0079d8cdb
+          git -C /tmp/remesher-workflows fetch --depth 1 origin 9589fdf402d2f04ded1165f5c809c96fd3a611b5
+          git -C /tmp/remesher-workflows checkout 9589fdf402d2f04ded1165f5c809c96fd3a611b5
           python utils/check_remesher_workflows.py /tmp/remesher-workflows/examples --server http://127.0.0.1:8234
           if [[ "${{ matrix.cuda.tag_suffix }}" == "cuda13.0" ]]; then
             cd /tmp/remesher-workflows
@@ -218,6 +218,7 @@ jobs:
               --glb-name ci_smoke_robot_rigged \
               --precision fp16 \
               --attn-backend sdpa \
+              --target-face-count 50000 \
               --timeout 3600 \
               --out-dir /tmp/remesher-smoke/rigged
             SMOKE_RIGGED_GLB="$(find /tmp/remesher-smoke/rigged -type f -iname '*.glb' | sort | head -n 1)"
