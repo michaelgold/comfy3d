@@ -309,7 +309,7 @@ RUN python /app/utils/node_install.py https://github.com/kijai/ComfyUI-Hunyuan3D
 RUN python /app/utils/node_install.py https://github.com/calcuis/gguf --version e802c7831507af49eefa40324eb78378eec4f3cf
 
 
-RUN python /app/utils/node_install.py https://github.com/michaelgold/ComfyUI-UniRig --version f12707e613710fc5cafef09990e049918896a6d3 --no-build-isolation
+RUN python /app/utils/node_install.py https://github.com/michaelgold/ComfyUI-UniRig --version c68895bd9f4ad44451bec335be97f0b98ccddabd --no-build-isolation
 
 RUN python /app/utils/node_install.py https://github.com/michaelgold/ComfyUI-GeometryPack --version 8229aa65ec026b4b87802e4ac3b28022c8dd628b --no-build-isolation
 

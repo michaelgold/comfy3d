@@ -145,8 +145,8 @@ jobs:
           docker rm -f comfy-test || true
           rm -rf /tmp/comfy3d-unirig-override
           git clone --depth 1 https://github.com/michaelgold/ComfyUI-UniRig.git /tmp/comfy3d-unirig-override
-          git -C /tmp/comfy3d-unirig-override fetch --depth 1 origin f12707e613710fc5cafef09990e049918896a6d3
-          git -C /tmp/comfy3d-unirig-override checkout f12707e613710fc5cafef09990e049918896a6d3
+          git -C /tmp/comfy3d-unirig-override fetch --depth 1 origin c68895bd9f4ad44451bec335be97f0b98ccddabd
+          git -C /tmp/comfy3d-unirig-override checkout c68895bd9f4ad44451bec335be97f0b98ccddabd
           mkdir -p "$HOME/.cache/comfy3d-models"
           docker run -d -p 8234:8188 --name comfy-test --runtime=nvidia --gpus all \
             -v "$HOME/.cache/comfy3d-models:/app/comfy/models" \
