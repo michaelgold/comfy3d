@@ -89,6 +89,18 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+      - name: Prepare self-hosted runner disk
+        run: |
+          echo "Disk before cleanup:"
+          df -h / /home "$RUNNER_WORKSPACE" || true
+          if [[ -d "$HOME/actions-runner/_diag" ]]; then
+            find "$HOME/actions-runner/_diag" -type f -mtime +7 -delete || true
+          fi
+          docker builder prune -af --filter 'until=24h' || true
+          docker image prune -af --filter 'until=24h' || true
+          docker system df || true
+          echo "Disk after cleanup:"
+          df -h / /home "$RUNNER_WORKSPACE" || true
       - name: Build Docker image
         run: |
           if [[ -z "${{ needs.check-comfyui-version.outputs.version_to_use }}" ]]; then
