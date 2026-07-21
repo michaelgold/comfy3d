@@ -89,18 +89,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Prepare self-hosted runner disk
+      - name: Report self-hosted runner disk
         run: |
-          echo "Disk before cleanup:"
           df -h / /home "$RUNNER_WORKSPACE" || true
-          if [[ -d "$HOME/actions-runner/_diag" ]]; then
-            find "$HOME/actions-runner/_diag" -type f -mtime +7 -delete || true
-          fi
-          docker builder prune -af --filter 'until=24h' || true
-          docker image prune -af --filter 'until=24h' || true
           docker system df || true
-          echo "Disk after cleanup:"
-          df -h / /home "$RUNNER_WORKSPACE" || true
       - name: Build Docker image
         run: |
           if [[ -z "${{ needs.check-comfyui-version.outputs.version_to_use }}" ]]; then
@@ -111,6 +103,12 @@ jobs:
             echo "final_update_version is empty" >&2
             exit 1
           fi
+          IMAGE="michaelgold/comfy3d:${{ needs.check-comfyui-version.outputs.final_update_version }}-${{ matrix.cuda.tag_suffix }}"
+          if docker image inspect "$IMAGE" >/dev/null 2>&1; then
+            echo "Using cached local Docker image: $IMAGE"
+            exit 0
+          fi
+          echo "Cached Docker image not found; building: $IMAGE"
           docker build \
             --build-arg VERSION=${{ needs.check-comfyui-version.outputs.version_to_use }} \
             --build-arg UPDATE_VERSION=${{ needs.check-comfyui-version.outputs.final_update_version }} \
@@ -120,7 +118,7 @@ jobs:
             --build-arg CUMM_CUDA_VERSION=${{ matrix.cuda.cumm_cuda_version }} \
             --build-arg CUDA_PACKAGE_VERSION=${{ matrix.cuda.cuda_package_version }} \
             --build-arg CUDA_ARCH_LIST="${{ matrix.cuda.cuda_arch_list }}" \
-            -t michaelgold/comfy3d:${{ needs.check-comfyui-version.outputs.final_update_version }}-${{ matrix.cuda.tag_suffix }} \
+            -t "$IMAGE" \
             -f Docker/Dockerfile .
       - name: Test container
         run: |
@@ -145,9 +143,14 @@ jobs:
           }
           # Remove existing container if it exists
           docker rm -f comfy-test || true
+          rm -rf /tmp/comfy3d-unirig-override
+          git clone --depth 1 https://github.com/michaelgold/ComfyUI-UniRig.git /tmp/comfy3d-unirig-override
+          git -C /tmp/comfy3d-unirig-override fetch --depth 1 origin b101f43c972bac138d2b23fd6660a4b4aca773e7
+          git -C /tmp/comfy3d-unirig-override checkout b101f43c972bac138d2b23fd6660a4b4aca773e7
           mkdir -p "$HOME/.cache/comfy3d-models"
           docker run -d -p 8234:8188 --name comfy-test --runtime=nvidia --gpus all \
             -v "$HOME/.cache/comfy3d-models:/app/comfy/models" \
+            -v "/tmp/comfy3d-unirig-override:/app/comfy/custom_nodes/ComfyUI-UniRig:ro" \
             michaelgold/comfy3d:${{ needs.check-comfyui-version.outputs.final_update_version }}-${{ matrix.cuda.tag_suffix }}
           sleep 150
           docker logs comfy-test > logs.txt 2>&1
