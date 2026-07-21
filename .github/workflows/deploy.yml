@@ -89,6 +89,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+      - name: Report self-hosted runner disk
+        run: |
+          df -h / /home "$RUNNER_WORKSPACE" || true
+          docker system df || true
       - name: Build Docker image
         run: |
           if [[ -z "${{ needs.check-comfyui-version.outputs.version_to_use }}" ]]; then
@@ -99,6 +103,12 @@ jobs:
             echo "final_update_version is empty" >&2
             exit 1
           fi
+          IMAGE="michaelgold/comfy3d:${{ needs.check-comfyui-version.outputs.final_update_version }}-${{ matrix.cuda.tag_suffix }}"
+          if docker image inspect "$IMAGE" >/dev/null 2>&1; then
+            echo "Using cached local Docker image: $IMAGE"
+            exit 0
+          fi
+          echo "Cached Docker image not found; building: $IMAGE"
           docker build \
             --build-arg VERSION=${{ needs.check-comfyui-version.outputs.version_to_use }} \
             --build-arg UPDATE_VERSION=${{ needs.check-comfyui-version.outputs.final_update_version }} \
@@ -108,23 +118,130 @@ jobs:
             --build-arg CUMM_CUDA_VERSION=${{ matrix.cuda.cumm_cuda_version }} \
             --build-arg CUDA_PACKAGE_VERSION=${{ matrix.cuda.cuda_package_version }} \
             --build-arg CUDA_ARCH_LIST="${{ matrix.cuda.cuda_arch_list }}" \
-            -t michaelgold/comfy3d:${{ needs.check-comfyui-version.outputs.final_update_version }}-${{ matrix.cuda.tag_suffix }} \
+            -t "$IMAGE" \
             -f Docker/Dockerfile .
       - name: Test container
         run: |
+          cleanup() {
+            status=$?
+            if [ "$status" -ne 0 ]; then
+              echo "::group::comfy-test diagnostics"
+              docker ps -a --filter name=comfy-test --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" || true
+              docker logs --tail 500 comfy-test || true
+              nvidia-smi || true
+              echo "::endgroup::"
+            fi
+            docker rm -f comfy-test || true
+            exit "$status"
+          }
+          trap cleanup EXIT
+          free_comfy_memory() {
+            curl -sS -X POST http://127.0.0.1:8234/free \
+              -H 'Content-Type: application/json' \
+              -d '{"unload_models": true, "free_memory": true}' || true
+            sleep 5
+          }
           # Remove existing container if it exists
           docker rm -f comfy-test || true
-          docker run -d -p 8234:8188 --name comfy-test --runtime=nvidia --gpus all michaelgold/comfy3d:${{ needs.check-comfyui-version.outputs.final_update_version }}-${{ matrix.cuda.tag_suffix }}
+          rm -rf /tmp/comfy3d-unirig-override
+          git clone --depth 1 https://github.com/michaelgold/ComfyUI-UniRig.git /tmp/comfy3d-unirig-override
+          git -C /tmp/comfy3d-unirig-override fetch --depth 1 origin c68895bd9f4ad44451bec335be97f0b98ccddabd
+          git -C /tmp/comfy3d-unirig-override checkout c68895bd9f4ad44451bec335be97f0b98ccddabd
+          mkdir -p "$HOME/.cache/comfy3d-models"
+          docker run -d -p 8234:8188 --name comfy-test --runtime=nvidia --gpus all \
+            -v "$HOME/.cache/comfy3d-models:/app/comfy/models" \
+            -v "/tmp/comfy3d-unirig-override:/app/comfy/custom_nodes/ComfyUI-UniRig:ro" \
+            michaelgold/comfy3d:${{ needs.check-comfyui-version.outputs.final_update_version }}-${{ matrix.cuda.tag_suffix }}
           sleep 150
-          docker logs comfy-test > logs.txt
+          docker logs comfy-test > logs.txt 2>&1
           cat logs.txt
           if grep -q "0.0.0.0" logs.txt; then
             echo "✅ ComfyUI server started"
           else
             echo "❌ ComfyUI server did not start" && exit 1
           fi
-          docker stop comfy-test
-          docker rm comfy-test
+          rm -rf /tmp/remesher-workflows /tmp/remesher-smoke
+          git clone --depth 1 https://github.com/remesher/remesher.git /tmp/remesher-workflows
+          git -C /tmp/remesher-workflows fetch --depth 1 origin 2d37cbbe63151327965fbd0db569d1e63c7bfb64
+          git -C /tmp/remesher-workflows checkout 2d37cbbe63151327965fbd0db569d1e63c7bfb64
+          python utils/check_remesher_workflows.py /tmp/remesher-workflows/examples --server http://127.0.0.1:8234
+          if [[ "${{ matrix.cuda.tag_suffix }}" == "cuda13.0" ]]; then
+            cd /tmp/remesher-workflows
+            printf '{"server_url":"http://127.0.0.1:8234"}\n' > config.json
+            mkdir -p /tmp/remesher-smoke/images /tmp/remesher-smoke/glb /tmp/remesher-smoke/rigged
+            python3 -m venv /tmp/remesher-smoke-venv
+            /tmp/remesher-smoke-venv/bin/python -m pip install --upgrade pip
+            /tmp/remesher-smoke-venv/bin/python -m pip install /tmp/remesher-workflows
+            docker exec -e HF_TOKEN="${{ secrets.HF_TOKEN }}" comfy-test bash -lc '
+              set -euo pipefail
+              download_model() {
+                url="$1"
+                dest="$2"
+                mkdir -p "$(dirname "$dest")"
+                if [ -s "$dest" ]; then
+                  echo "Model already present: $dest"
+                  return 0
+                fi
+                echo "Downloading model: $url -> $dest"
+                tmp="${dest}.tmp"
+                rm -f "$tmp"
+                auth_args=()
+                if [ -n "${HF_TOKEN:-}" ]; then
+                  auth_args=(-H "Authorization: Bearer ${HF_TOKEN}")
+                fi
+                curl -L --fail --retry 5 --retry-delay 10 --connect-timeout 30 "${auth_args[@]}" -o "$tmp" "$url"
+                test -s "$tmp"
+                mv "$tmp" "$dest"
+              }
+              download_model "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/diffusion_models/qwen_image_2512_fp8_e4m3fn.safetensors" "/app/comfy/models/diffusion_models/qwen_image_2512_fp8_e4m3fn.safetensors"
+              download_model "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors" "/app/comfy/models/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors"
+              download_model "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/vae/qwen_image_vae.safetensors" "/app/comfy/models/vae/qwen_image_vae.safetensors"
+              download_model "https://huggingface.co/lightx2v/Qwen-Image-Lightning/resolve/main/Qwen-Image-Lightning-4steps-V1.0.safetensors" "/app/comfy/models/loras/Qwen-Image-Lightning-4steps-V1.0.safetensors"
+              download_model "https://huggingface.co/facebook/dinov3-vitl16-pretrain-lvd1689m/resolve/main/config.json" "/app/comfy/models/facebook/dinov3-vitl16-pretrain-lvd1689m/config.json"
+              download_model "https://huggingface.co/facebook/dinov3-vitl16-pretrain-lvd1689m/resolve/main/preprocessor_config.json" "/app/comfy/models/facebook/dinov3-vitl16-pretrain-lvd1689m/preprocessor_config.json"
+              download_model "https://huggingface.co/facebook/dinov3-vitl16-pretrain-lvd1689m/resolve/main/model.safetensors" "/app/comfy/models/facebook/dinov3-vitl16-pretrain-lvd1689m/model.safetensors"
+              download_model "https://huggingface.co/jasongzy/Make-It-Animatable/resolve/main/output/best/new/bw.pth" "/app/comfy/models/mia/bw.pth"
+              download_model "https://huggingface.co/jasongzy/Make-It-Animatable/resolve/main/output/best/new/bw_normal.pth" "/app/comfy/models/mia/bw_normal.pth"
+              download_model "https://huggingface.co/jasongzy/Make-It-Animatable/resolve/main/output/best/new/joints.pth" "/app/comfy/models/mia/joints.pth"
+              download_model "https://huggingface.co/jasongzy/Make-It-Animatable/resolve/main/output/best/new/joints_coarse.pth" "/app/comfy/models/mia/joints_coarse.pth"
+              download_model "https://huggingface.co/jasongzy/Make-It-Animatable/resolve/main/output/best/new/pose.pth" "/app/comfy/models/mia/pose.pth"
+            '
+            /tmp/remesher-smoke-venv/bin/comfy-prompt-cli text-to-image \
+              --prompt "cute 3d robot character in a clean t-pose, arms straight out horizontally, front view, centered, full body, neutral background, toy-like rounded shapes" \
+              --seed 12345 \
+              --filename-prefix ci_smoke_robot_tpose \
+              --timeout 3600 \
+              --out-dir /tmp/remesher-smoke/images
+            SMOKE_IMAGE="$(find /tmp/remesher-smoke/images -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \) | sort | head -n 1)"
+            test -s "$SMOKE_IMAGE"
+            echo "Remesher smoke image: $SMOKE_IMAGE"
+            free_comfy_memory
+            /tmp/remesher-smoke-venv/bin/comfy-prompt-cli image-to-glb \
+              --image "$SMOKE_IMAGE" \
+              --mesh-seed 23456 \
+              --target-face-num 50000 \
+              --filename-prefix ci_smoke_robot_glb \
+              --texture-seed 34567 \
+              --timeout 3600 \
+              --out-dir /tmp/remesher-smoke/glb
+            SMOKE_GLB="$(find /tmp/remesher-smoke/glb -type f -iname '*.glb' | sort | head -n 1)"
+            test -s "$SMOKE_GLB"
+            echo "Remesher smoke GLB: $SMOKE_GLB"
+            free_comfy_memory
+            /tmp/remesher-smoke-venv/bin/comfy-prompt-cli rig-glb \
+              --mesh "$SMOKE_GLB" \
+              --glb-name ci_smoke_robot_rigged \
+              --precision fp16 \
+              --attn-backend sdpa \
+              --target-face-count 50000 \
+              --no-embed-textures \
+              --timeout 3600 \
+              --out-dir /tmp/remesher-smoke/rigged
+            SMOKE_RIGGED_GLB="$(find /tmp/remesher-smoke/rigged -type f -iname '*.glb' | sort | head -n 1)"
+            test -s "$SMOKE_RIGGED_GLB"
+            echo "Remesher smoke rigged GLB: $SMOKE_RIGGED_GLB"
+            cd "$GITHUB_WORKSPACE"
+          fi
 
   push:
     needs: [check-comfyui-version, build-and-test]
