@@ -349,7 +349,7 @@ ARG CUDA_PACKAGE_VERSION
 RUN apt-get update && apt-get install -y --allow-change-held-packages --no-install-recommends \
     libgl1 libegl1 libopengl0 libglu1-mesa \
     libcusparse-${CUDA_PACKAGE_VERSION} libcublas-${CUDA_PACKAGE_VERSION} libcusolver-${CUDA_PACKAGE_VERSION} \
-    wget curl git \
+    wget curl git gcc g++ build-essential \
     libglib2.0-0 libglib2.0-dev libgthread-2.0-0 \
     libtbbmalloc2 \
     libvorbis-dev libtheora-dev libjpeg-dev libpng-dev libtiff-dev \
