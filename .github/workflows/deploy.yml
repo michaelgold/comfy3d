@@ -89,7 +89,14 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+      - name: Pull existing images for Docker layer cache
+        run: |
+          docker pull michaelgold/comfy3d:${{ needs.check-comfyui-version.outputs.final_update_version }}-${{ matrix.cuda.tag_suffix }} || true
+          docker pull michaelgold/comfy3d:latest || true
+
       - name: Build Docker image
+        env:
+          DOCKER_BUILDKIT: "1"
         run: |
           if [[ -z "${{ needs.check-comfyui-version.outputs.version_to_use }}" ]]; then
             echo "version_to_use is empty" >&2
@@ -100,6 +107,9 @@ jobs:
             exit 1
           fi
           docker build \
+            --cache-from michaelgold/comfy3d:${{ needs.check-comfyui-version.outputs.final_update_version }}-${{ matrix.cuda.tag_suffix }} \
+            --cache-from michaelgold/comfy3d:latest \
+            --build-arg BUILDKIT_INLINE_CACHE=1 \
             --build-arg VERSION=${{ needs.check-comfyui-version.outputs.version_to_use }} \
             --build-arg UPDATE_VERSION=${{ needs.check-comfyui-version.outputs.final_update_version }} \
             --build-arg CUDA_TAG=${{ matrix.cuda.cuda_tag }} \
