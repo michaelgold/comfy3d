@@ -309,9 +309,9 @@ RUN python /app/utils/node_install.py https://github.com/kijai/ComfyUI-Hunyuan3D
 RUN python /app/utils/node_install.py https://github.com/calcuis/gguf --version e802c7831507af49eefa40324eb78378eec4f3cf
 
 
-RUN python /app/utils/node_install.py https://github.com/PozzettiAndrea/ComfyUI-UniRig --version 30503fb0bf591f4c4d11f1e61580bd66ecdda8cd --no-build-isolation -i comfy-env -i comfy-3d-viewers -i comfy-sparse-attn
+RUN python /app/utils/node_install.py https://github.com/michaelgold/ComfyUI-UniRig --version c68895bd9f4ad44451bec335be97f0b98ccddabd --no-build-isolation
 
-RUN python /app/utils/node_install.py https://github.com/PozzettiAndrea/ComfyUI-GeometryPack --version 3cb49fbd7ba911c10a72fc767926a029f97798ab --no-build-isolation -i comfy-env -i comfy-dynamic-widgets -i comfy-3d-viewers
+RUN python /app/utils/node_install.py https://github.com/michaelgold/ComfyUI-GeometryPack --version 8229aa65ec026b4b87802e4ac3b28022c8dd628b --no-build-isolation
 
 RUN python /app/utils/node_install.py https://github.com/visualbruno/ComfyUI-Trellis2 --version 3c7e46b265c1e28f523889ad24d65708cdeee7f8 --no-build-isolation
 
@@ -349,7 +349,8 @@ ARG CUDA_PACKAGE_VERSION
 RUN apt-get update && apt-get install -y --allow-change-held-packages --no-install-recommends \
     libgl1 libegl1 libopengl0 libglu1-mesa \
     libcusparse-${CUDA_PACKAGE_VERSION} libcublas-${CUDA_PACKAGE_VERSION} libcusolver-${CUDA_PACKAGE_VERSION} \
-    wget curl git gcc g++ build-essential \
+    gcc g++ \
+    wget curl git \
     libglib2.0-0 libglib2.0-dev libgthread-2.0-0 \
     libtbbmalloc2 \
     libvorbis-dev libtheora-dev libjpeg-dev libpng-dev libtiff-dev \
@@ -381,7 +382,7 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV NVIDIA_VISIBLE_DEVICES=all
-ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility,graphics
+ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
 ENV PYOPENGL_PLATFORM=egl
 ENV FORCE_CUDA="1"
 ENV CUDA_HOME="/usr/local/cuda"
