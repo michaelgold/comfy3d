@@ -122,11 +122,24 @@ jobs:
             -f Docker/Dockerfile .
       - name: Test container
         run: |
+          cleanup() {
+            status=$?
+            if [ "$status" -ne 0 ]; then
+              echo "::group::comfy-test diagnostics"
+              docker ps -a --filter name=comfy-test --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" || true
+              docker logs --tail 500 comfy-test || true
+              nvidia-smi || true
+              echo "::endgroup::"
+            fi
+            docker rm -f comfy-test || true
+            exit "$status"
+          }
+          trap cleanup EXIT
           # Remove existing container if it exists
           docker rm -f comfy-test || true
           docker run -d -p 8234:8188 --name comfy-test --runtime=nvidia --gpus all michaelgold/comfy3d:${{ needs.check-comfyui-version.outputs.final_update_version }}-${{ matrix.cuda.tag_suffix }}
           sleep 150
-          docker logs comfy-test > logs.txt
+          docker logs comfy-test > logs.txt 2>&1
           cat logs.txt
           if grep -q "0.0.0.0" logs.txt; then
             echo "✅ ComfyUI server started"

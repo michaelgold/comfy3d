@@ -298,7 +298,7 @@ RUN python /app/utils/node_install.py https://github.com/michaelgold/ComfyUI-HF-
 
 RUN python /app/utils/node_install.py https://github.com/lquesada/ComfyUI-Inpaint-CropAndStitch --version b432b2411cbb7d3192d35953bd3aafea05a0e245
 
-RUN python /app/utils/node_install.py https://github.com/MrForExample/ComfyUI-3D-Pack --version 9ab02eb440b98cf7dea0c2de9379f45d99d160d5 --no-build-isolation -i cumm==0.7.11 -i spconv-cu126 -i utils3d && \
+RUN python /app/utils/node_install.py https://github.com/MrForExample/ComfyUI-3D-Pack --version 9ab02eb440b98cf7dea0c2de9379f45d99d160d5 --no-build-isolation -i cumm==0.7.11 -i spconv-cu126 -i utils3d -i git+https://github.com/ashawkey/kiuikit.git && \
 uv pip install git+https://github.com/EasternJournalist/utils3d.git@9a4eb15e4021b67b12c460c7057d642626897ec8
 
 
@@ -331,7 +331,7 @@ ENV TORCH_CUDA=${TORCH_CUDA}
 RUN --mount=from=wheel-builder,source=/wheels,target=/mnt/wheels,ro \
     --mount=type=cache,target=/root/.cache/pip \
     uv pip install --no-index --find-links=/mnt/wheels --only-binary=:all: --no-deps \
-      diff_gaussian_rasterization  pytorch3d torch_scatter nvdiffrast mesh_processor custom_rasterizer nvdiffrast cumm_${TORCH_CUDA} spconv_${TORCH_CUDA} flash_attn xformers torch_cluster cumesh flex_gemm nvdiffrec_render o_voxel
+      diff_gaussian_rasterization  pytorch3d torch_scatter nvdiffrast mesh_processor custom_rasterizer nvdiffrast cumm_${TORCH_CUDA} spconv_${TORCH_CUDA} flash_attn xformers torch_cluster cumesh flex_gemm nvdiffrec_render o_voxel kiui
 
 # fix for older nodes     
 RUN uv pip install diffusers==0.34.0 transformers==4.56.0
