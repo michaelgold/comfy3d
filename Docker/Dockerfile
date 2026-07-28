@@ -217,6 +217,7 @@ RUN git clone --recursive https://github.com/visualbruno/TRELLIS.2 && \
 
 # Build Open3D from source because upstream has no cp313 Linux wheels yet; Trellis2 requires it.
 RUN apt-get update && apt-get install -y --no-install-recommends \
+        cmake \
         libx11-dev libxi-dev libxrandr-dev libxinerama-dev libxcursor-dev libgl1-mesa-dev libglu1-mesa-dev \
         libegl1-mesa-dev libudev-dev libusb-1.0-0-dev libssl-dev \
     && git clone --recursive https://github.com/isl-org/Open3D.git \
