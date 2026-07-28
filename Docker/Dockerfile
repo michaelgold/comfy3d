@@ -359,7 +359,7 @@ RUN --mount=from=wheel-builder,source=/wheels,target=/mnt/wheels,ro \
       diff_gaussian_rasterization  pytorch3d torch_scatter nvdiffrast mesh_processor custom_rasterizer nvdiffrast cumm_${TORCH_CUDA} spconv_${TORCH_CUDA} flash_attn xformers torch_cluster cumesh flex_gemm nvdiffrec_render o_voxel kiui open3d_cpu
 
 # fix for older nodes     
-RUN uv pip install diffusers==0.34.0 transformers==4.56.0 dash
+RUN uv pip install diffusers==0.34.0 transformers==4.56.0 dash plyfile
 
 # install bpy
 RUN uv pip install --extra-index-url https://michaelgold.github.io/buildbpy/ bpy==5.2.0
