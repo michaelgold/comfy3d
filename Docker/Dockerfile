@@ -356,7 +356,7 @@ ENV TORCH_CUDA=${TORCH_CUDA}
 RUN --mount=from=wheel-builder,source=/wheels,target=/mnt/wheels,ro \
     --mount=type=cache,target=/root/.cache/pip \
     uv pip install --no-index --find-links=/mnt/wheels --only-binary=:all: --no-deps \
-      diff_gaussian_rasterization  pytorch3d torch_scatter nvdiffrast mesh_processor custom_rasterizer nvdiffrast cumm_${TORCH_CUDA} spconv_${TORCH_CUDA} flash_attn xformers torch_cluster cumesh flex_gemm nvdiffrec_render o_voxel kiui open3d
+      diff_gaussian_rasterization  pytorch3d torch_scatter nvdiffrast mesh_processor custom_rasterizer nvdiffrast cumm_${TORCH_CUDA} spconv_${TORCH_CUDA} flash_attn xformers torch_cluster cumesh flex_gemm nvdiffrec_render o_voxel kiui open3d_cpu
 
 # fix for older nodes     
 RUN uv pip install diffusers==0.34.0 transformers==4.56.0
