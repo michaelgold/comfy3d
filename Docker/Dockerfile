@@ -237,7 +237,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         -DBUILD_BENCHMARKS=OFF \
         -DBUILD_PYTHON_MODULE=ON \
         -DPython3_EXECUTABLE=/app/.venv/bin/python \
-    && make -j$(nproc) pip-package \
+    && cmake --build . --target pip-package --parallel 4 --verbose \
     && cp lib/python_package/pip_package/open3d*.whl /wheels/ \
     && apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
