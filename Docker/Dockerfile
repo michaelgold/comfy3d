@@ -5,7 +5,7 @@ ARG CUDA_PACKAGE_VERSION=13-0
 ARG CUMM_CUDA_VERSION=13.0
 ARG CUDA_ARCH_LIST="7.5;8.0;8.6;8.9;9.0;12.0"
 ARG TORCH_CUDA=cu130
-ARG COMFY_CLI_VERSION=1.6.0
+ARG COMFY_CLI_VERSION=1.13.0
 
 FROM nvidia/cuda:${CUDA_TAG} AS build-base
 
@@ -19,7 +19,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
 # ---------- Stage 1: build Python ----------
-ARG PYTHON_VER=3.11.10
+ARG PYTHON_VER=3.13.14
 FROM build-base AS python-builder
 WORKDIR /tmp/python
 ADD https://www.python.org/ftp/python/${PYTHON_VER}/Python-${PYTHON_VER}.tgz .
@@ -39,9 +39,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl wget git c
     apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
 COPY --from=python-builder /usr/local/bin/python* /usr/local/bin/
-COPY --from=python-builder /usr/local/lib/python3.11 /usr/local/lib/python3.11
-COPY --from=python-builder /usr/local/lib/libpython3.11.so* /usr/local/lib/
-COPY --from=python-builder /usr/local/include/python3.11 /usr/local/include/python3.11
+COPY --from=python-builder /usr/local/lib/python3.13 /usr/local/lib/python3.13
+COPY --from=python-builder /usr/local/lib/libpython3.13.so* /usr/local/lib/
+COPY --from=python-builder /usr/local/include/python3.13 /usr/local/include/python3.13
 
 ENV PATH=/usr/local/bin:$PATH
 # Update library cache and add library path for shared Python libraries
@@ -146,7 +146,7 @@ ENV CUMM_CUDA_ARCH_LIST=${CUDA_ARCH_LIST}
 
 ARG CUMM_CUDA_VERSION
 ENV CUMM_CUDA_VERSION=${CUMM_CUDA_VERSION}
-# ENV CUMM_DISABLE_JIT="1"
+ENV CUMM_DISABLE_JIT="1"
 
 # Build CUMM as a wheel (a dep for spconv)
 COPY ./cumm_cuda_arch.patch /tmp/cumm_cuda_arch.patch
@@ -214,6 +214,32 @@ RUN git clone --recursive https://github.com/visualbruno/TRELLIS.2 && \
     cd TRELLIS.2/o-voxel && \
     python setup.py bdist_wheel && \
     cp dist/*.whl /wheels/
+
+# Build Open3D from source because upstream has no cp313 Linux wheels yet; Trellis2 requires it.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        cmake libwayland-bin libwayland-dev libxkbcommon-dev \
+        libx11-dev libxi-dev libxrandr-dev libxinerama-dev libxcursor-dev libgl1-mesa-dev libglu1-mesa-dev \
+        libegl1-mesa-dev libudev-dev libusb-1.0-0-dev libssl-dev \
+    && git clone --recursive https://github.com/isl-org/Open3D.git \
+    && cd Open3D \
+    && git checkout v0.19.0 \
+    && git submodule update --init --recursive \
+    && mkdir -p build \
+    && cd build \
+    && cmake .. \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DBUILD_SHARED_LIBS=ON \
+        -DBUILD_CUDA_MODULE=OFF \
+        -DBUILD_GUI=OFF \
+        -DBUILD_WEBRTC=OFF \
+        -DBUILD_EXAMPLES=OFF \
+        -DBUILD_UNIT_TESTS=OFF \
+        -DBUILD_BENCHMARKS=OFF \
+        -DBUILD_PYTHON_MODULE=ON \
+        -DPython3_EXECUTABLE=/app/.venv/bin/python \
+    && cmake --build . --target pip-package --parallel 4 --verbose \
+    && cp lib/python_package/pip_package/open3d*.whl /wheels/ \
+    && apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
 
 # ---------- Stage 3b: install wheels  ----------
@@ -298,8 +324,7 @@ RUN python /app/utils/node_install.py https://github.com/michaelgold/ComfyUI-HF-
 
 RUN python /app/utils/node_install.py https://github.com/lquesada/ComfyUI-Inpaint-CropAndStitch --version b432b2411cbb7d3192d35953bd3aafea05a0e245
 
-RUN python /app/utils/node_install.py https://github.com/MrForExample/ComfyUI-3D-Pack --version 9ab02eb440b98cf7dea0c2de9379f45d99d160d5 --no-build-isolation -i cumm==0.7.11 -i spconv-cu126 -i utils3d -i git+https://github.com/ashawkey/kiuikit.git && \
-uv pip install git+https://github.com/EasternJournalist/utils3d.git@9a4eb15e4021b67b12c460c7057d642626897ec8
+# ComfyUI-3D-Pack is intentionally omitted for Python 3.13; it carries stale cp313-incompatible dependencies and is not used by current Comfy3D flows.
 
 
 RUN python /app/utils/node_install.py https://github.com/cubiq/ComfyUI_essentials --version cb5c69c5715230ff6cc1402ddbb5a59473e23202 
@@ -313,7 +338,7 @@ RUN python /app/utils/node_install.py https://github.com/michaelgold/ComfyUI-Uni
 
 RUN python /app/utils/node_install.py https://github.com/michaelgold/ComfyUI-GeometryPack --version 8229aa65ec026b4b87802e4ac3b28022c8dd628b --no-build-isolation
 
-RUN python /app/utils/node_install.py https://github.com/visualbruno/ComfyUI-Trellis2 --version 3c7e46b265c1e28f523889ad24d65708cdeee7f8 --no-build-isolation
+RUN python /app/utils/node_install.py https://github.com/visualbruno/ComfyUI-Trellis2 --version 3c7e46b265c1e28f523889ad24d65708cdeee7f8 --no-build-isolation -i open3d
 
 RUN python /app/utils/node_install.py https://github.com/yolain/ComfyUI-Easy-Use --version b5e31ef12ad9d0b187b545c2707735cc7d581c52
 
@@ -331,13 +356,13 @@ ENV TORCH_CUDA=${TORCH_CUDA}
 RUN --mount=from=wheel-builder,source=/wheels,target=/mnt/wheels,ro \
     --mount=type=cache,target=/root/.cache/pip \
     uv pip install --no-index --find-links=/mnt/wheels --only-binary=:all: --no-deps \
-      diff_gaussian_rasterization  pytorch3d torch_scatter nvdiffrast mesh_processor custom_rasterizer nvdiffrast cumm_${TORCH_CUDA} spconv_${TORCH_CUDA} flash_attn xformers torch_cluster cumesh flex_gemm nvdiffrec_render o_voxel kiui
+      diff_gaussian_rasterization  pytorch3d torch_scatter nvdiffrast mesh_processor custom_rasterizer nvdiffrast cumm_${TORCH_CUDA} spconv_${TORCH_CUDA} flash_attn xformers torch_cluster cumesh flex_gemm nvdiffrec_render o_voxel kiui open3d_cpu
 
 # fix for older nodes     
-RUN uv pip install diffusers==0.34.0 transformers==4.56.0
+RUN uv pip install diffusers==0.34.0 transformers==4.56.0 dash plyfile
 
 # install bpy
-RUN uv pip install --extra-index-url https://michaelgold.github.io/buildbpy/ bpy==5.0.1
+RUN uv pip install --extra-index-url https://michaelgold.github.io/buildbpy/ bpy==5.2.0
 
 
 
@@ -349,8 +374,7 @@ ARG CUDA_PACKAGE_VERSION
 RUN apt-get update && apt-get install -y --allow-change-held-packages --no-install-recommends \
     libgl1 libegl1 libopengl0 libglu1-mesa \
     libcusparse-${CUDA_PACKAGE_VERSION} libcublas-${CUDA_PACKAGE_VERSION} libcusolver-${CUDA_PACKAGE_VERSION} \
-    gcc g++ \
-    wget curl git \
+    wget curl git gcc g++ build-essential \
     libglib2.0-0 libglib2.0-dev libgthread-2.0-0 \
     libtbbmalloc2 \
     libvorbis-dev libtheora-dev libjpeg-dev libpng-dev libtiff-dev \
@@ -360,9 +384,9 @@ RUN apt-get update && apt-get install -y --allow-change-held-packages --no-insta
 
 # # Bring in Python runtime and venv
 COPY --from=python-builder /usr/local/bin/python* /usr/local/bin/
-COPY --from=python-builder /usr/local/lib/python3.11 /usr/local/lib/python3.11
-COPY --from=python-builder /usr/local/lib/libpython3.11.so* /usr/local/lib/
-COPY --from=python-builder /usr/local/include/python3.11 /usr/local/include/python3.11
+COPY --from=python-builder /usr/local/lib/python3.13 /usr/local/lib/python3.13
+COPY --from=python-builder /usr/local/lib/libpython3.13.so* /usr/local/lib/
+COPY --from=python-builder /usr/local/include/python3.13 /usr/local/include/python3.13
 
 # copy app directory from comfy-builder
 COPY --from=comfy-builder /app /app
