@@ -1,0 +1,14 @@
+{
+  "description": "Known-compatible Comfy3D lockset for ComfyUI core and custom-node revisions. Keep nodes that import ComfyUI internals pinned here and refresh through CI before publishing images.",
+  "comfyui": {
+    "stable_ref": "v0.29.0",
+    "canary_ref": "master"
+  },
+  "nodes": {
+    "ComfyUI-LTXVideo": {
+      "repo": "https://github.com/Lightricks/ComfyUI-LTXVideo",
+      "ref": "3b9c5cde4700917074823d45e25401d81049f8fc",
+      "compatibility_note": "Required for newer ComfyUI Lightricks API: supports freqs_cis_matrix fallback after interleaved_freqs_cis/split_freqs_cis removal. Older ref 531512f7286963dc7aff1fd8bf5556e95eae03af fails import on current ComfyUI master."
+    }
+  }
+}

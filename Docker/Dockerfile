@@ -344,7 +344,8 @@ RUN python /app/utils/node_install.py https://github.com/yolain/ComfyUI-Easy-Use
 
 RUN python /app/utils/node_install.py https://github.com/michaelgold/ComfyUI-Blender-Nodes --version 0bb265061d4a75935b641a131ccfebef5ff9261e
 
-RUN python /app/utils/node_install.py https://github.com/Lightricks/ComfyUI-LTXVideo --version 531512f7286963dc7aff1fd8bf5556e95eae03af
+# LTXVideo imports ComfyUI Lightricks internals; keep this pin mirrored in utils/comfy3d_lockset.json.
+RUN python /app/utils/node_install.py https://github.com/Lightricks/ComfyUI-LTXVideo --version 3b9c5cde4700917074823d45e25401d81049f8fc
 
 RUN python /app/utils/node_install.py https://github.com/evanspearman/ComfyMath --version c01177221c31b8e5fbc062778fc8254aeb541638
 
@@ -434,16 +435,19 @@ RUN comfy --skip-prompt --workspace=/app/comfy tracking disable
 COPY ./workflows /app/comfy/user/default/workflows
 COPY ./input /app/comfy/input
 
-# Update ComfyUI to latest version if different from base
+# Update ComfyUI to latest version if different from base, then re-sync compatibility-sensitive
+# custom nodes from the checked-in lockset. This prevents a new ComfyUI core from being
+# paired with stale node commits that import removed internal APIs.
 RUN if [ "$VERSION" != "$UPDATE_VERSION" ] && [ -n "$UPDATE_VERSION" ]; then \
         echo "Updating ComfyUI from $VERSION to $UPDATE_VERSION"; \
         cd /app/comfy && \
-        git fetch origin && \
-        git checkout -b "${UPDATE_VERSION}" $UPDATE_VERSION && \
+        git fetch origin "$UPDATE_VERSION" && \
+        git checkout --detach FETCH_HEAD && \
         uv pip install -r requirements.txt; \
     else \
         echo "No update needed, VERSION=$VERSION UPDATE_VERSION=$UPDATE_VERSION"; \
-    fi
+    fi && \
+    python /app/utils/sync_custom_nodes_lockset.py --node ComfyUI-LTXVideo
 
 
 RUN chmod a+x /app/utils/init.sh

@@ -1,7 +1,15 @@
 FROM michaelgold/comfy3d:latest AS comfy3d
 
+ARG COMFYUI_REF=master
+ENV COMFYUI_REF=${COMFYUI_REF}
+
+COPY ./utils /app/utils
+
 WORKDIR /app/comfy
-RUN git checkout master && git pull && uv pip install -r requirements.txt
+RUN git fetch origin "${COMFYUI_REF}" && \
+    git checkout --detach FETCH_HEAD && \
+    uv pip install -r requirements.txt && \
+    python /app/utils/sync_custom_nodes_lockset.py --node ComfyUI-LTXVideo
 
 EXPOSE 8188
 ENTRYPOINT ["/app/utils/init.sh"]
