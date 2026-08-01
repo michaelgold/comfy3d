@@ -8,7 +8,24 @@
     "ComfyUI-LTXVideo": {
       "repo": "https://github.com/Lightricks/ComfyUI-LTXVideo",
       "ref": "3b9c5cde4700917074823d45e25401d81049f8fc",
-      "compatibility_note": "Required for newer ComfyUI Lightricks API: supports freqs_cis_matrix fallback after interleaved_freqs_cis/split_freqs_cis removal. Older ref 531512f7286963dc7aff1fd8bf5556e95eae03af fails import on current ComfyUI master."
+      "compatibility_note": "Required for newer ComfyUI Lightricks API: supports freqs_cis_matrix fallback after interleaved_freqs_cis/split_freqs_cis removal. Older ref 531512f7286963dc7aff1fd8bf5556e95eae03af fails import on current ComfyUI master. The current upstream also imports pad from kornia.geometry.transform.pyramid; patch it to torch.nn.functional.pad for newer Kornia.",
+      "patches": [
+        {
+          "file": "pyramid_blending.py",
+          "replace": "    is_powerof_two,\n    pad,\n)",
+          "with": "    is_powerof_two,\n)"
+        },
+        {
+          "file": "pyramid_blending.py",
+          "replace": "image = pad(image, (0, pad_right, 0, pad_down), \"reflect\")",
+          "with": "image = F.pad(image, (0, pad_right, 0, pad_down), \"reflect\")"
+        },
+        {
+          "file": "pyramid_blending.py",
+          "replace": "images = pad(images, padding, border_type)",
+          "with": "images = F.pad(images, padding, border_type)"
+        }
+      ]
     }
   }
 }

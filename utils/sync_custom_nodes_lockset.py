@@ -26,6 +26,22 @@ def node_dir_from_repo(repo: str) -> str:
     return name[:-4] if name.endswith(".git") else name
 
 
+def apply_patches(name: str, spec: dict, target: Path) -> None:
+    for item in spec.get("patches", []):
+        rel = item["file"]
+        patch_path = target / rel
+        old = item["replace"]
+        new = item["with"]
+        text = patch_path.read_text()
+        if old not in text:
+            if new in text:
+                print(f"Patch already applied for {name}: {rel}", flush=True)
+                continue
+            raise SystemExit(f"Patch text not found for {name}: {rel}")
+        patch_path.write_text(text.replace(old, new, 1))
+        print(f"Applied compatibility patch for {name}: {rel}", flush=True)
+
+
 def sync_node(name: str, spec: dict, custom_nodes: Path) -> None:
     repo = spec["repo"]
     ref = spec["ref"]
@@ -45,6 +61,7 @@ def sync_node(name: str, spec: dict, custom_nodes: Path) -> None:
 
     run(["git", "checkout", "--force", "FETCH_HEAD"], cwd=target)
     run(["git", "submodule", "update", "--init", "--recursive", "--depth", "1"], cwd=target)
+    apply_patches(name, spec, target)
 
     requirements = target / "requirements.txt"
     if requirements.exists():
