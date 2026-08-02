@@ -4,6 +4,7 @@ ARG COMFYUI_REF=master
 ENV COMFYUI_REF=${COMFYUI_REF}
 
 COPY ./utils /app/utils
+RUN chmod a+x /app/utils/init.sh
 
 WORKDIR /app/comfy
 RUN git fetch origin "${COMFYUI_REF}" && \
