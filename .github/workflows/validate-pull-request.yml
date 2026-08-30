@@ -9,6 +9,7 @@ on:
       - docker-compose*.yml
       - .github/actionlint.yaml
       - .github/workflows/*.yml
+      - .github/workflows/*.yaml
       - tests/**
       - utils/**
 

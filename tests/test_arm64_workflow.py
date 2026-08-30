@@ -13,6 +13,18 @@ def _runner_labels(runs_on):
     return [runs_on] if isinstance(runs_on, str) else list(runs_on)
 
 
+def _on_section(workflow):
+    if "on" in workflow:
+        return workflow["on"]
+    return workflow.get(True, {})
+
+
+def test_on_section_supports_yaml_1_1_and_yaml_1_2_keys():
+    triggers = {"push": {"branches": ["main"]}}
+    assert _on_section({True: triggers}) is triggers
+    assert _on_section({"on": triggers}) is triggers
+
+
 def test_existing_self_hosted_workflows_are_explicitly_x64():
     for path in [*WORKFLOWS.glob("*.yml"), *WORKFLOWS.glob("*.yaml")]:
         if path == ARM64_WORKFLOW:
@@ -27,18 +39,22 @@ def test_existing_self_hosted_workflows_are_explicitly_x64():
 def test_pull_requests_never_run_on_self_hosted_runners():
     for path in [*WORKFLOWS.glob("*.yml"), *WORKFLOWS.glob("*.yaml")]:
         workflow = yaml.safe_load(path.read_text())
-        if "pull_request" not in workflow.get(True, {}):
+        if "pull_request" not in _on_section(workflow):
             continue
         for job_name, job in workflow.get("jobs", {}).items():
             labels = _runner_labels(job["runs-on"])
             assert "self-hosted" not in labels, (path, job_name, labels)
 
     validation = yaml.safe_load(PR_VALIDATION_WORKFLOW.read_text())
-    assert "pull_request" in validation[True]
+    validation_triggers = _on_section(validation)
+    assert "pull_request" in validation_triggers
+    validation_paths = validation_triggers["pull_request"]["paths"]
+    assert ".github/workflows/*.yml" in validation_paths
+    assert ".github/workflows/*.yaml" in validation_paths
     assert validation["jobs"]["validate"]["runs-on"] == "ubuntu-24.04"
 
     workflow = yaml.safe_load(ARM64_WORKFLOW.read_text())
-    assert "pull_request" not in workflow[True]
+    assert "pull_request" not in _on_section(workflow)
 
     validate = workflow["jobs"]["validate"]
     assert validate["runs-on"] == "ubuntu-24.04"
@@ -54,9 +70,10 @@ def test_arm64_workflow_gates_native_publication():
     workflow = yaml.safe_load(source)
 
     assert workflow["name"] == "Build and Publish Native ARM64 Image"
-    assert "pull_request" not in workflow[True]
-    assert "push" in workflow[True]
-    assert workflow[True]["push"]["branches"] == ["main"]
+    assert "pull_request" not in _on_section(workflow)
+    triggers = _on_section(workflow)
+    assert "push" in triggers
+    assert triggers["push"]["branches"] == ["main"]
 
     assert "Docker/Dockerfile.arm64" in source
     assert "docker build" in source
