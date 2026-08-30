@@ -1,0 +1,41 @@
+---
+name: Validate Pull Request
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - Docker/**
+      - docker-compose*.yml
+      - .github/actionlint.yaml
+      - .github/workflows/*.yml
+      - .github/workflows/*.yaml
+      - tests/**
+      - utils/**
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Validate Docker and workflow contracts
+        run: |
+          set -euo pipefail
+          python3 -m venv "${RUNNER_TEMP}/comfy3d-pr-validation"
+          "${RUNNER_TEMP}/comfy3d-pr-validation/bin/pip" install pytest pyyaml
+          "${RUNNER_TEMP}/comfy3d-pr-validation/bin/python" -m pytest \
+            tests/test_arm64_dockerfile.py \
+            tests/test_arm64_workflow.py \
+            -q
+          docker buildx build --check --platform linux/amd64 \
+            -f Docker/Dockerfile .
+          docker buildx build --check --platform linux/arm64 \
+            -f Docker/Dockerfile.arm64 .
+          docker compose -f docker-compose.yml config >/dev/null
+          docker compose -f docker-compose.arm64.yml config >/dev/null

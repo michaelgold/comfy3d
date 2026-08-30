@@ -1,0 +1,233 @@
+---
+name: Build and Publish Native ARM64 Image
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - Docker/Dockerfile.arm64
+      - docker-compose.arm64.yml
+      - .github/actionlint.yaml
+      - .github/workflows/deploy-arm64.yml
+      - tests/test_arm64_dockerfile.py
+      - tests/test_arm64_workflow.py
+      - utils/check_remesher_workflows.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: comfy3d-arm64-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  IMAGE_REPOSITORY: michaelgold/comfy3d
+  REMESHER_REF: c18e55b05e6f5de2376655342687c2cca7b1a9c1
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Validate ARM64 workflow contracts
+        run: |
+          set -euo pipefail
+          python3 -m venv "${RUNNER_TEMP}/comfy3d-ci"
+          "${RUNNER_TEMP}/comfy3d-ci/bin/pip" install pytest pyyaml
+          "${RUNNER_TEMP}/comfy3d-ci/bin/python" -m pytest \
+            tests/test_arm64_dockerfile.py \
+            tests/test_arm64_workflow.py \
+            -q
+          docker buildx build --check --platform linux/arm64 \
+            -f Docker/Dockerfile.arm64 .
+          docker compose -f docker-compose.arm64.yml config >/dev/null
+
+  build-test-publish:
+    needs: validate
+    if: ${{ github.ref == 'refs/heads/main' }}
+    runs-on: [self-hosted, Linux, ARM64, spark, gpu]
+    timeout-minutes: 360
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Verify Spark runner
+        run: |
+          set -euo pipefail
+          test "$(uname -m)" = "aarch64"
+          command -v docker
+          docker version
+          nvidia-smi
+
+      - name: Record current ARM64 cache image
+        run: |
+          PREVIOUS_ARM64_IMAGE_ID=$(docker image inspect --format "{{.Id}}" "${IMAGE_REPOSITORY}:arm64" 2>/dev/null || true)
+          echo "PREVIOUS_ARM64_IMAGE_ID=${PREVIOUS_ARM64_IMAGE_ID}" >> "$GITHUB_ENV"
+
+      - name: Pull ARM64 layer cache
+        continue-on-error: true
+        run: docker pull "${IMAGE_REPOSITORY}:arm64"
+
+      - name: Build native ARM64 image
+        run: |
+          set -euo pipefail
+          BASE_VERSION=$(python3 -c 'import json; print(json.load(open("utils/comfyui_version_info.json"))["base_version"])')
+          UPDATE_VERSION=$(python3 -c 'import json; print(json.load(open("utils/comfyui_version_info.json"))["update_version"])')
+          SHORT_SHA=${GITHUB_SHA::12}
+          LOCAL_IMAGE="${IMAGE_REPOSITORY}:arm64-ci-${GITHUB_RUN_ID}"
+          {
+            echo "BASE_VERSION=${BASE_VERSION}"
+            echo "UPDATE_VERSION=${UPDATE_VERSION}"
+            echo "SHORT_SHA=${SHORT_SHA}"
+            echo "LOCAL_IMAGE=${LOCAL_IMAGE}"
+          } >> "$GITHUB_ENV"
+          docker build \
+            --cache-from "${IMAGE_REPOSITORY}:arm64" \
+            --build-arg BUILDKIT_INLINE_CACHE=1 \
+            --build-arg VERSION="${BASE_VERSION}" \
+            --build-arg UPDATE_VERSION="${UPDATE_VERSION}" \
+            --platform linux/arm64 \
+            -t "${LOCAL_IMAGE}" \
+            -f Docker/Dockerfile.arm64 .
+
+      - name: Test native ARM64 container
+        run: |
+          set -euo pipefail
+          CONTAINER="comfy3d-arm64-ci-${GITHUB_RUN_ID}"
+          PORT=8235
+          LOG_FILE="${RUNNER_TEMP}/comfy3d-arm64.log"
+          OBJECT_INFO="${RUNNER_TEMP}/comfy3d-arm64-object-info.json"
+          REMESHER_DIR="${RUNNER_TEMP}/remesher-${GITHUB_RUN_ID}"
+          cleanup() {
+            status=$?
+            if [ "$status" -ne 0 ]; then
+              echo "::group::ARM64 diagnostics"
+              docker ps -a --filter "name=${CONTAINER}" || true
+              docker logs --tail 500 "${CONTAINER}" || true
+              nvidia-smi || true
+              echo "::endgroup::"
+            fi
+            docker rm -f "${CONTAINER}" >/dev/null 2>&1 || true
+            rm -rf "${REMESHER_DIR}"
+            exit "$status"
+          }
+          trap cleanup EXIT
+
+          docker rm -f "${CONTAINER}" >/dev/null 2>&1 || true
+          docker run -d \
+            --name "${CONTAINER}" \
+            --runtime=nvidia \
+            --gpus all \
+            --shm-size 16g \
+            -p "127.0.0.1:${PORT}:8188" \
+            "${LOCAL_IMAGE}"
+
+          for _ in $(seq 1 120); do
+            if curl -fsS "http://127.0.0.1:${PORT}/object_info" >"${OBJECT_INFO}"; then
+              break
+            fi
+            sleep 2
+          done
+          test -s "${OBJECT_INFO}"
+
+          docker exec "${CONTAINER}" sh -c 'test "$(uname -m)" = "aarch64"'
+          docker exec "${CONTAINER}" /app/.venv/bin/python -c \
+            "import torch, open3d, cumm.core_cc, spconv; assert torch.cuda.is_available(); assert torch.cuda.get_device_capability(0) >= (12, 0); print(torch.__version__, torch.cuda.get_device_name(0), open3d.__version__)"
+          docker exec -e LD_PRELOAD= "${CONTAINER}" /app/.venv/bin/python -c \
+            "import bpy; assert bpy.app.version == (5, 2, 1); print(bpy.app.version_string)"
+
+          docker logs "${CONTAINER}" >"${LOG_FILE}" 2>&1
+          if grep -E "IMPORT FAILED|Cannot import|Traceback" "${LOG_FILE}"; then
+            echo "Custom-node import failure detected" >&2
+            exit 1
+          fi
+
+          git init "${REMESHER_DIR}"
+          git -C "${REMESHER_DIR}" remote add origin https://github.com/remesher/remesher.git
+          git -C "${REMESHER_DIR}" fetch --depth 1 origin "${REMESHER_REF}"
+          git -C "${REMESHER_DIR}" checkout --detach FETCH_HEAD
+          python3 utils/check_remesher_workflows.py \
+            --server "http://127.0.0.1:${PORT}" \
+            "${REMESHER_DIR}/examples"
+
+      - name: Publish ARM64 image
+        if: ${{ github.ref == 'refs/heads/main' }}
+        env:
+          DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          registry_logged_in=false
+          registry_cleanup() {
+            if [ "${registry_logged_in}" = true ]; then
+              docker logout >/dev/null 2>&1 || true
+            fi
+          }
+          trap registry_cleanup EXIT
+
+          test -n "${DOCKERHUB_USERNAME}"
+          test -n "${DOCKERHUB_TOKEN}"
+          printf '%s' "${DOCKERHUB_TOKEN}" | \
+            docker login --username "${DOCKERHUB_USERNAME}" --password-stdin
+          registry_logged_in=true
+
+          SHA_TAG="${IMAGE_REPOSITORY}:arm64-${SHORT_SHA}"
+          VERSION_TAG="${IMAGE_REPOSITORY}:${BASE_VERSION}-arm64"
+          ARM64_TAG="${IMAGE_REPOSITORY}:arm64"
+          docker tag "${LOCAL_IMAGE}" "${SHA_TAG}"
+          docker tag "${LOCAL_IMAGE}" "${VERSION_TAG}"
+          docker tag "${LOCAL_IMAGE}" "${ARM64_TAG}"
+          docker push "${SHA_TAG}"
+          docker push "${VERSION_TAG}"
+          PUSH_LOG="${RUNNER_TEMP}/comfy3d-arm64-push.log"
+          docker push "${ARM64_TAG}" | tee "${PUSH_LOG}"
+          PUSHED_DIGEST=$(python3 -c 'import re, sys; matches = re.findall(r"digest: (sha256:[0-9a-f]{64})", open(sys.argv[1]).read()); assert matches, "docker push did not report a digest"; print(matches[-1])' "${PUSH_LOG}")
+
+          MANIFEST_JSON="${RUNNER_TEMP}/comfy3d-arm64-manifest.json"
+          IMAGE_JSON="${RUNNER_TEMP}/comfy3d-arm64-image.json"
+          docker buildx imagetools inspect "${ARM64_TAG}" \
+            --format '{{json .Manifest}}' >"${MANIFEST_JSON}"
+          docker buildx imagetools inspect "${ARM64_TAG}@${PUSHED_DIGEST}" \
+            --format '{{json .Image}}' >"${IMAGE_JSON}"
+          python3 - "${PUSHED_DIGEST}" "${MANIFEST_JSON}" "${IMAGE_JSON}" <<'PY'
+          import json
+          import sys
+
+          expected_digest = sys.argv[1]
+          with open(sys.argv[2]) as handle:
+              manifest = json.load(handle)
+          with open(sys.argv[3]) as handle:
+              image = json.load(handle)
+          assert manifest["digest"] == expected_digest, (manifest["digest"], expected_digest)
+          assert image["architecture"] == "arm64", image["architecture"]
+          assert image["os"] == "linux", image["os"]
+          print(f"published_digest={expected_digest} platform=linux/arm64")
+          PY
+
+      - name: Clean runner images
+        if: ${{ always() }}
+        run: |
+          if [ -n "${LOCAL_IMAGE:-}" ]; then
+            docker image rm -f "${LOCAL_IMAGE}" >/dev/null 2>&1 || true
+          fi
+          if [ -n "${SHORT_SHA:-}" ]; then
+            docker image rm -f "${IMAGE_REPOSITORY}:arm64-${SHORT_SHA}" >/dev/null 2>&1 || true
+          fi
+          if [ -n "${BASE_VERSION:-}" ]; then
+            docker image rm -f "${IMAGE_REPOSITORY}:${BASE_VERSION}-arm64" >/dev/null 2>&1 || true
+          fi
+          CURRENT_ARM64_IMAGE_ID=$(docker image inspect --format "{{.Id}}" "${IMAGE_REPOSITORY}:arm64" 2>/dev/null || true)
+          if [ -n "${PREVIOUS_ARM64_IMAGE_ID:-}" ] && \
+             [ "${PREVIOUS_ARM64_IMAGE_ID}" != "${CURRENT_ARM64_IMAGE_ID}" ]; then
+            PREVIOUS_ARM64_REPO_TAGS=$(docker image inspect --format "{{json .RepoTags}}" "${PREVIOUS_ARM64_IMAGE_ID}" 2>/dev/null || true)
+            if [ "${PREVIOUS_ARM64_REPO_TAGS}" = "null" ] || \
+               [ "${PREVIOUS_ARM64_REPO_TAGS}" = "[]" ]; then
+              docker image rm -f "${PREVIOUS_ARM64_IMAGE_ID}" >/dev/null 2>&1 || true
+            else
+              echo "Retaining displaced ARM64 image because it still has tags: ${PREVIOUS_ARM64_REPO_TAGS}"
+            fi
+          fi
