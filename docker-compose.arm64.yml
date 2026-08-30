@@ -1,0 +1,25 @@
+services:
+  comfy3d:
+    platform: linux/arm64
+    image: comfy3d:arm64
+    build:
+      context: .
+      dockerfile: Docker/Dockerfile.arm64
+    container_name: comfy3d-arm64
+    shm_size: 16gb
+    ports:
+      - "8188:8188"
+    volumes:
+      - ./output:/app/comfy/output:cached
+      - ./workflows:/app/comfy/user/default/workflows:cached
+      - ./input:/app/comfy/input:cached
+      - ./models:/app/comfy/models
+      - comfyui-manager-arm64:/app/comfy/user/default/ComfyUI-Manager
+      - comfyui-u2net-arm64:/root/.u2net
+      - .:/workspace
+    runtime: nvidia
+    gpus: all
+
+volumes:
+  comfyui-manager-arm64:
+  comfyui-u2net-arm64:

@@ -64,7 +64,28 @@ You can easily spin up instances of this Docker container on Runpod
 docker compose -f docker-compose.dev.yml up --build
 ```
 
-#### Production:
+#### NVIDIA DGX Spark / Linux ARM64:
+
+The published `michaelgold/comfy3d:latest` image is currently AMD64-only. On a
+DGX Spark (GB10), build and run the native ARM64 image instead:
+
+```bash
+docker compose -f docker-compose.arm64.yml up --build
+```
+
+This uses `Docker/Dockerfile.arm64`, CUDA 13, ARM64 PyTorch wheels, and native
+SM 12.0 code (binary-compatible with the GB10's SM 12.1). PyPI does not publish
+`onnxruntime-gpu` for Linux ARM64, so this target uses CPU ONNX Runtime for
+ONNX-backed nodes. Blender-backed nodes use the validated native
+`bpy 5.2.1` CPython 3.13 ARM64 wheel from buildbpy's checksummed,
+versioned GitHub Release.
+Open3D remains preloaded in the ComfyUI process for ARM64 static-TLS
+compatibility, while Blender work runs in isolated subprocesses without that
+preload to avoid Open3D/Blender TBB ABI conflicts.
+
+The app runs at http://localhost:8188
+
+#### Production (published AMD64 image):
 
 ```bash
 docker compose up -d
