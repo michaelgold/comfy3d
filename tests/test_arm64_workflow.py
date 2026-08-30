@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 
 import yaml
 
@@ -63,6 +64,20 @@ def test_pull_requests_never_run_on_self_hosted_runners():
     assert native["runs-on"] == ["self-hosted", "Linux", "ARM64", "spark", "gpu"]
     assert native["needs"] == "validate"
     assert "github.ref == 'refs/heads/main'" in native["if"]
+
+
+def test_self_hosted_jobs_pin_actions_to_full_commit_shas():
+    pinned_action = re.compile(r"^[^@]+@[0-9a-f]{40}$")
+    for path in [*WORKFLOWS.glob("*.yml"), *WORKFLOWS.glob("*.yaml")]:
+        workflow = yaml.safe_load(path.read_text())
+        for job_name, job in workflow.get("jobs", {}).items():
+            labels = _runner_labels(job["runs-on"])
+            if "self-hosted" not in labels:
+                continue
+            for step in job.get("steps", []):
+                action = step.get("uses")
+                if action is not None:
+                    assert pinned_action.fullmatch(action), (path, job_name, action)
 
 
 def test_arm64_workflow_gates_native_publication():
