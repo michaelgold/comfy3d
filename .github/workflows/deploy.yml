@@ -6,9 +6,6 @@ on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
   workflow_dispatch:
     inputs:
       version:
@@ -84,7 +81,7 @@ jobs:
             cumm_cuda_version: "13.0"
             cuda_package_version: "13-0"
             cuda_arch_list: "7.5;8.0;8.6;8.9;9.0;12.0"
-    runs-on: self-hosted
+    runs-on: [self-hosted, Linux, X64]
     timeout-minutes: 300
     steps:
       - name: Checkout repository
@@ -158,7 +155,7 @@ jobs:
   push:
     needs: [check-comfyui-version, build-and-test]
     if: ${{ github.ref == 'refs/heads/main' && (github.event_name != 'schedule' || needs.check-comfyui-version.outputs.new_tag == 'true' || needs.check-comfyui-version.outputs.new_commit == 'true') }}
-    runs-on: self-hosted
+    runs-on: [self-hosted, Linux, X64]
     timeout-minutes: 60
     strategy:
       matrix:

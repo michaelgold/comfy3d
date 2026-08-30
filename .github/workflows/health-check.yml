@@ -5,7 +5,7 @@ on:
 
 jobs:
   test-runner:
-    runs-on: self-hosted
+    runs-on: [self-hosted, Linux, X64]
     steps:
       - name: Confirm runner is alive
         run: echo "✅ Runner is working"

@@ -18,7 +18,7 @@ jobs:
           - base_image: nvidia/cuda:13.0.2-cudnn-devel-ubuntu24.04
             torch_cuda: cu130
             tag_suffix: cuda13.0
-    runs-on: self-hosted
+    runs-on: [self-hosted, Linux, X64]
     timeout-minutes: 120
     steps:
       - name: Checkout repository
@@ -58,7 +58,7 @@ jobs:
 
   push:
     needs: build-and-test
-    runs-on: self-hosted
+    runs-on: [self-hosted, Linux, X64]
     timeout-minutes: 60
     strategy:
       matrix:
