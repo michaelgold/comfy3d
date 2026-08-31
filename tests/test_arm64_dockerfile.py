@@ -1,8 +1,12 @@
+import json
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
 ARM64_DOCKERFILE = ROOT / "Docker" / "Dockerfile.arm64"
+AMD64_DOCKERFILE = ROOT / "Docker" / "Dockerfile"
+LOCKSET = ROOT / "utils" / "comfy3d_lockset.json"
+UNIRIG_COMMIT = "cab707a2c0f69900df0c8577418441750a84e0db"
 
 
 def test_arm64_image_installs_and_validates_bpy_5_2_1():
@@ -39,7 +43,20 @@ def test_arm64_image_installs_and_validates_bpy_5_2_1():
         "libxrender1 libxkbcommon0 libsm6 libxext6 libglib2.0-0 libtbbmalloc2"
         in normalized
     )
-    assert "4f2d5803dcd59ac0230623bb20871e176a1b650b" in dockerfile
+    assert UNIRIG_COMMIT in dockerfile
     assert "a117c477762f65fe29ed51738e2e83498c43eed7" in dockerfile
     assert "libharfbuzz0b" in dockerfile
     assert "Skipping bpy" not in dockerfile
+
+
+def test_amd64_and_arm64_pin_the_same_accepted_unirig_commit():
+    for path in (AMD64_DOCKERFILE, ARM64_DOCKERFILE):
+        dockerfile = path.read_text()
+        assert UNIRIG_COMMIT in dockerfile
+        assert "4f2d5803dcd59ac0230623bb20871e176a1b650b" not in dockerfile
+        assert "c68895bd9f4ad44451bec335be97f0b98ccddabd" not in dockerfile
+
+    lockset = json.loads(LOCKSET.read_text())
+    unirig = lockset["nodes"]["ComfyUI-UniRig"]
+    assert unirig["repo"] == "https://github.com/michaelgold/ComfyUI-UniRig"
+    assert unirig["ref"] == UNIRIG_COMMIT

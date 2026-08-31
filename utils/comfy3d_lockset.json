@@ -5,6 +5,11 @@
     "canary_ref": "master"
   },
   "nodes": {
+    "ComfyUI-UniRig": {
+      "repo": "https://github.com/michaelgold/ComfyUI-UniRig",
+      "ref": "cab707a2c0f69900df0c8577418441750a84e0db",
+      "compatibility_note": "Validated with ComfyUI 0.34.2 and comfy-aimdo 0.4.15 on native Linux ARM64: lazy Linear checkpoint loading, texture-preserving near-target MIA rigging, and isolated Blender 5.2.1 export. Keep AMD64 and ARM64 Dockerfile pins synchronized with this ref."
+    },
     "ComfyUI-LTXVideo": {
       "repo": "https://github.com/Lightricks/ComfyUI-LTXVideo",
       "ref": "3b9c5cde4700917074823d45e25401d81049f8fc",
