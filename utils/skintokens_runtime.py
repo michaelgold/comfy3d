@@ -8,13 +8,50 @@ import re
 import shlex
 import subprocess
 import sys
+import tempfile
 
 SOURCE_REPO = 'https://github.com/VAST-AI-Research/SkinTokens.git'
 SOURCE_REVISION = '273b691d35989d71cd17ff2895fdc735097b92d1'
+SOURCE_PATCH = Path(__file__).with_name('patches') / 'skintokens-prefill-dtype.patch'
 
 
 def run(args, **kwargs):
     return subprocess.run([str(a) for a in args], check=True, text=True, **kwargs)
+
+
+def validate_source(source, revision=SOURCE_REVISION, *, allow_unpatched=False):
+    """Accept only the pinned tree plus our patch, never arbitrary dirty files.
+
+    Build the expected tree in a disposable index, not the operator's index.
+    A fresh index also avoids trusting assume-unchanged/skip-worktree flags.
+    Untracked model links and inference outputs remain allowed as before.
+    """
+    git = ['git', '-C', source]
+    head = run([*git, 'rev-parse', 'HEAD'], capture_output=True).stdout.strip()
+    if head != revision:
+        raise RuntimeError(f'SkinTokens source pin mismatch: {head}; expected {revision}')
+    base_tree = run([*git, 'rev-parse', f'{revision}^{{tree}}'], capture_output=True).stdout.strip()
+    index_tree = run([*git, 'write-tree'], capture_output=True).stdout.strip()
+    with tempfile.TemporaryDirectory(prefix='skintokens-index-') as temporary:
+        env = dict(os.environ, GIT_INDEX_FILE=str(Path(temporary) / 'index'))
+        run([*git, 'read-tree', revision], env=env)
+        run([*git, 'apply', '--cached', '--whitespace=nowarn', SOURCE_PATCH], env=env)
+        patched_tree = run([*git, 'write-tree'], env=env, capture_output=True).stdout.strip()
+        if index_tree not in (base_tree, patched_tree):
+            raise RuntimeError('Refusing modified SkinTokens tracked source index')
+        for state, tree in (('patched', patched_tree), ('unpatched', base_tree)):
+            # Recreate instead of refreshing a user index (or its skip flags).
+            Path(env['GIT_INDEX_FILE']).unlink()
+            run([*git, 'read-tree', tree], env=env)
+            changed = run([*git, '-c', 'core.fileMode=true', 'diff-files',
+                           '--patch', '--binary', '--no-textconv', '--no-ext-diff',
+                           '--ignore-submodules=none'],
+                          env=env, capture_output=True).stdout
+            if not changed:
+                if state == 'unpatched' and not allow_unpatched:
+                    raise RuntimeError('SkinTokens source missing required prefill dtype patch; run prepare')
+                return state
+    raise RuntimeError('Refusing modified SkinTokens tracked source (expected only vendored patch)')
 
 
 def prepare_source(source, cache, repo=SOURCE_REPO, revision=SOURCE_REVISION):
@@ -24,12 +61,9 @@ def prepare_source(source, cache, repo=SOURCE_REPO, revision=SOURCE_REVISION):
     if not source.exists():
         run(['git', 'clone', '--no-checkout', repo, source])
         run(['git', '-C', source, 'checkout', '--detach', revision])
-    head = run(['git', '-C', source, 'rev-parse', 'HEAD'], capture_output=True).stdout.strip()
-    if head != revision:
-        raise RuntimeError(f'Refusing existing checkout at {head}; expected {revision}')
-    dirty = run(['git', '-C', source, 'status', '--porcelain', '--untracked-files=no'], capture_output=True).stdout
-    if dirty:
-        raise RuntimeError('Refusing modified SkinTokens tracked source')
+    if validate_source(source, revision, allow_unpatched=True) == 'unpatched':
+        run(['git', '-C', source, 'apply', '--whitespace=nowarn', SOURCE_PATCH])
+    validate_source(source, revision)
     for name in ('experiments', 'models'):
         target = cache / name
         target.mkdir(parents=True, exist_ok=True)
@@ -112,11 +146,7 @@ def environment(prefix, cache):
 def validate_runtime(prefix):
     require_isolated(prefix)
     source = prefix / 'source'
-    head = run(['git', '-C', source, 'rev-parse', 'HEAD'], capture_output=True).stdout.strip()
-    if head != SOURCE_REVISION:
-        raise RuntimeError('SkinTokens source pin mismatch')
-    if run(['git', '-C', source, 'status', '--porcelain', '--untracked-files=no'], capture_output=True).stdout:
-        raise RuntimeError('SkinTokens source has modified tracked files')
+    validate_source(source)
     validate_assets(source)
     run([sys.executable, '-m', 'pip', 'check'])
     # Import the actual CLI/server graphs, not just package metadata. No model load,

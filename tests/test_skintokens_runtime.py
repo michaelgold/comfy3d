@@ -15,25 +15,124 @@ def runtime():
     return module
 
 
-def test_prepare_checks_out_exact_revision_and_links_persistent_models(tmp_path):
+def test_vendored_patch_matches_gpu_exercised_bytes():
+    import hashlib
+    patch = runtime().SOURCE_PATCH
+    assert hashlib.sha256(patch.read_bytes()).hexdigest() == (
+        '85de82bf3f405c015509543100e3ac2a72a605eaf7db731d1fb955a99233b9f7'
+    )
+
+
+@pytest.fixture
+def source_fixture(tmp_path):
     m = runtime()
     origin = tmp_path / 'origin'
     origin.mkdir()
     subprocess.run(['git', 'init', str(origin)], check=True, capture_output=True)
     (origin / 'demo.py').write_text('# fixture\n')
+    tokenrig = origin / 'src/model/tokenrig.py'
+    tokenrig.parent.mkdir(parents=True)
+    tokenrig.write_text('''        )[0], device=device).unsqueeze(0)
+        assert start_tokens.shape[0] == 1
+        start_embed = self.transformer.get_input_embeddings()(start_tokens)
+        inputs_embeds = torch.cat([learned_mesh_cond, start_embed], dim=1)
+\x20\x20\x20\x20\x20\x20\x20\x20
+        results = self.transformer.generate(
+            inputs_embeds=inputs_embeds,
+''')
+    tokenrig.chmod(0o755)
     subprocess.run(['git', '-C', str(origin), 'add', '.'], check=True)
     subprocess.run(['git', '-C', str(origin), '-c', 'user.name=Test', '-c', 'user.email=test@example.org', 'commit', '-m', 'fixture'], check=True, capture_output=True)
     revision = subprocess.check_output(['git', '-C', str(origin), 'rev-parse', 'HEAD'], text=True).strip()
     source = tmp_path / 'runtime/source'
     cache = tmp_path / 'cache'
+    return m, origin, revision, source, cache
+
+
+def test_prepare_checks_out_exact_revision_and_links_persistent_models(source_fixture):
+    m, origin, revision, source, cache = source_fixture
     m.prepare_source(source, cache, str(origin), revision)
+    patched = (source / 'src/model/tokenrig.py').read_bytes()
+    assert b'.to(start_embed.dtype)' in patched
     m.prepare_source(source, cache, str(origin), revision)
+    assert (source / 'src/model/tokenrig.py').read_bytes() == patched
+    m.validate_source(source, revision)
     assert subprocess.check_output(['git', '-C', str(source), 'rev-parse', 'HEAD'], text=True).strip() == revision
     assert (source / 'experiments').resolve() == cache / 'experiments'
     assert (source / 'models').resolve() == cache / 'models'
     (source / 'demo.py').write_text('# user edit\n')
     with pytest.raises(RuntimeError, match='modified'):
         m.prepare_source(source, cache, str(origin), revision)
+
+
+@pytest.mark.parametrize('change', [
+    'unrelated', 'same-file', 'staged', 'staged-add', 'deleted', 'mode',
+    'assume-unchanged', 'skip-worktree', 'staged-hidden-by-worktree',
+])
+def test_prepare_and_validate_refuse_every_other_tracked_change(source_fixture, change):
+    m, origin, revision, source, cache = source_fixture
+    m.prepare_source(source, cache, str(origin), revision)
+    path = source / ('src/model/tokenrig.py' if change == 'same-file' else 'demo.py')
+    git = ['git', '-C', str(source)]
+    original = path.read_bytes()
+    if change in ('assume-unchanged', 'skip-worktree'):
+        subprocess.run([*git, 'update-index', '--' + change, 'demo.py'], check=True)
+    if change == 'deleted':
+        path.unlink()
+    elif change == 'mode':
+        path.chmod(0o755)
+    elif change == 'staged-add':
+        (source / 'other.py').write_text('# extra tracked file\n')
+        subprocess.run([*git, 'add', 'other.py'], check=True)
+    else:
+        path.write_bytes(original + b'# unexpected edit\n')
+        if change in ('staged', 'staged-hidden-by-worktree'):
+            subprocess.run([*git, 'add', 'demo.py'], check=True)
+        if change == 'staged-hidden-by-worktree':
+            path.write_bytes(original)
+    before = path.read_bytes() if path.exists() else None
+    with pytest.raises(RuntimeError, match='modified'):
+        m.validate_source(source, revision)
+    with pytest.raises(RuntimeError, match='modified'):
+        m.prepare_source(source, cache, str(origin), revision)
+    assert (path.read_bytes() if path.exists() else None) == before
+
+
+def test_validate_requires_patch_and_correct_pin_without_repair(source_fixture):
+    m, origin, revision, source, cache = source_fixture
+    with pytest.raises(RuntimeError, match='missing required prefill'):
+        m.validate_source(origin, revision)
+    assert b'.to(start_embed.dtype)' not in (origin / 'src/model/tokenrig.py').read_bytes()
+    with pytest.raises(RuntimeError, match='pin mismatch'):
+        m.validate_source(origin, '0' * 40)
+    (origin / 'demo.py').write_text('# preexisting edit\n')
+    with pytest.raises(RuntimeError, match='modified'):
+        m.prepare_source(origin, cache, str(origin), revision)
+    assert b'.to(start_embed.dtype)' not in (origin / 'src/model/tokenrig.py').read_bytes()
+    assert not cache.exists()
+
+
+def test_expected_patch_can_be_staged_and_untracked_assets_are_allowed(source_fixture):
+    m, origin, revision, source, cache = source_fixture
+    m.prepare_source(source, cache, str(origin), revision)
+    subprocess.run(['git', '-C', str(source), 'add', 'src/model/tokenrig.py'], check=True)
+    (source / 'result.glb').write_bytes(b'untracked output')
+    m.validate_source(source, revision)
+    m.prepare_source(source, cache, str(origin), revision)
+
+
+def test_runtime_validation_uses_exact_source_check(source_fixture, monkeypatch):
+    m, origin, revision, source, cache = source_fixture
+    m.prepare_source(source, cache, str(origin), revision)
+    monkeypatch.setattr(m, 'require_isolated', lambda prefix: None)
+    real_validate = m.validate_source
+    monkeypatch.setattr(m, 'validate_source', lambda path: real_validate(path, revision))
+    # Patched source gets through to the next real validation boundary.
+    with pytest.raises(RuntimeError, match='Missing model assets'):
+        m.validate_runtime(source.parent)
+    (source / 'demo.py').write_text('# unexpected edit\n')
+    with pytest.raises(RuntimeError, match='modified'):
+        m.validate_runtime(source.parent)
 
 
 def test_download_pins_both_repositories_and_only_required_files(tmp_path):
@@ -71,6 +170,7 @@ def test_env_quotes_paths_and_exposes_node_contract(tmp_path):
     assert 'SKINTOKENS_ROOT=' in text
     assert 'SKINTOKENS_PYTHON=' in text
     assert 'HF_HOME=' in text
+    assert 'LD_PRELOAD' not in text
 
 
 def test_prepare_rejects_non_sha_before_mutating(tmp_path):
@@ -151,12 +251,18 @@ def test_documentation_does_not_recommend_unsafe_upstream_server():
     assert 'loopback' in text
     assert 'Integration pending' not in text
     assert 'd53a0010f31106abf7dfe0822404cfe5d9a1b274' in text
-    assert 'inference-unqualified' in text
+    assert 'single-sample end-to-end smoke passed on ARM64 Spark' in text
+    assert 'does **not** qualify clean separate-runtime installation' in text
     smoke = next(block for block in shell_blocks if 'skintokens_worker.py' in block)
     assert '/app/comfy/custom_nodes/ComfyUI-UniRig/nodes/skintokens_worker.py' in smoke
     assert 'cd "$SKINTOKENS_ROOT"' in smoke
     assert '"$SKINTOKENS_PYTHON"' in smoke
     assert '--use_transfer' in smoke
+    assert 'env LD_PRELOAD= OMP_NUM_THREADS=4' in smoke
+    assert '--use_postprocess' not in smoke  # not part of the recorded Spark run
+    assert 'export LD_PRELOAD' not in text and 'unset LD_PRELOAD' not in text
+    assert '2.13.0+cu130' in text and '4.57.6' in text
+    assert 'transformers==4.57.6' in (ROOT / 'utils/skintokens-requirements.txt').read_text()
     assert 'timeout --signal=TERM --kill-after=10s' in smoke
     commands = '\n'.join(line for line in smoke.splitlines() if not line.lstrip().startswith('#'))
     assert '--foreground' not in commands

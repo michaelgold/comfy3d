@@ -1,0 +1,16 @@
+diff --git a/src/model/tokenrig.py b/src/model/tokenrig.py
+index ab35e3f..b0082ad 100755
+--- a/src/model/tokenrig.py
++++ b/src/model/tokenrig.py
+@@ -236,7 +236,10 @@ class TokenRig(ModelSpec):
+         )[0], device=device).unsqueeze(0)
+         assert start_tokens.shape[0] == 1
+         start_embed = self.transformer.get_input_embeddings()(start_tokens)
+-        inputs_embeds = torch.cat([learned_mesh_cond, start_embed], dim=1)
++        # Keep the prefill KV cache in the transformer's inference dtype.
++        # RMSNorm/autocast can promote mesh conditioning to float32; mixing
++        # fp32 prefill with bf16 decode makes FlashAttention reject Q/K/V.
++        inputs_embeds = torch.cat([learned_mesh_cond, start_embed], dim=1).to(start_embed.dtype)
+         
+         results = self.transformer.generate(
+             inputs_embeds=inputs_embeds,
