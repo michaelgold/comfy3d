@@ -1,0 +1,13 @@
+# Optional overlay; no changes to the default image or existing rig backends.
+# Use with docker-compose.yml OR docker-compose.arm64.yml, not by itself.
+services:
+  comfy3d:
+    environment:
+      SKINTOKENS_ROOT: /opt/skintokens/source
+      SKINTOKENS_PYTHON: /opt/skintokens/venv/bin/python
+    volumes:
+      - skintokens-runtime:/opt/skintokens
+
+volumes:
+  # Never reuse across architectures, Python ABIs, or incompatible base images.
+  skintokens-runtime:

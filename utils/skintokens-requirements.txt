@@ -1,0 +1,23 @@
+# Inference dependencies for source 273b691d35989d71cd17ff2895fdc735097b92d1.
+# Install ONLY through skintokens_runtime.py in its dedicated clean venv.
+# torch, bpy, numpy and flash-attn are operator-provisioned platform dependencies;
+# the installer constrains ALL preinstalled distributions against replacement.
+transformers==4.57.1
+diffusers==0.35.1
+huggingface-hub==0.36.0
+gradio==5.49.1
+python-box==7.3.2
+einops==0.8.1
+omegaconf==2.3.0
+lightning==2.5.5
+addict==2.4.0
+fast-simplification==0.1.12
+trimesh==4.9.0
+bottle==0.13.4
+tornado==6.5.2
+requests==2.32.5
+tqdm==4.67.1
+numpy>=1.26,<3
+scipy>=1.11,<2
+# open3d is in upstream's general requirements but not imported by its CLI/server
+# graph at the pinned revision. Omit its training/visualization stack here.
