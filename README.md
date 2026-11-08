@@ -46,6 +46,15 @@ You can easily spin up instances of this Docker container on Runpod
 
 ---
 
+## Optional SkinTokens rigging
+
+See [SkinTokens runtime provisioning](docs/skintokens.md) for the pinned source
+and model assets, isolated dependency installation, persistent cache, opt-in
+Compose overlay, and validation commands. Existing backends are unchanged.
+Candidate image builds pin the maintained UniRig fork with `SkinTokensRigGLB`;
+GPU inference remains unqualified. Provisioning alone does not add the node to
+older images. See the safe worker smoke and release gates in the guide.
+
 ## 🐳 Getting Started
 
 ### Prerequisites

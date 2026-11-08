@@ -6,7 +6,7 @@ ROOT = Path(__file__).resolve().parents[1]
 ARM64_DOCKERFILE = ROOT / "Docker" / "Dockerfile.arm64"
 AMD64_DOCKERFILE = ROOT / "Docker" / "Dockerfile"
 LOCKSET = ROOT / "utils" / "comfy3d_lockset.json"
-UNIRIG_COMMIT = "cab707a2c0f69900df0c8577418441750a84e0db"
+UNIRIG_COMMIT = "d53a0010f31106abf7dfe0822404cfe5d9a1b274"
 
 
 def test_arm64_image_installs_and_validates_bpy_5_2_1():
